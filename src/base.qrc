@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>resources/new.png</file>
+        <file>resources/open.png</file>
+        <file>resources/save.png</file>
+        <file>resources/exit.png</file>
+
+        <file>resources/page.png</file>
+        <file>resources/page_edit.png</file>
+        <file>resources/page_save.png</file>
+        <file>resources/page_go.png</file>
+        <file>resources/page_lightning.png</file>
+    </qresource>
+</RCC>

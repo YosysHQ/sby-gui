@@ -1,0 +1,7 @@
+/generated/
+/sby-gui
+Makefile
+/cmake_install.cmake
+/CMakeFiles
+/CMakeScripts
+/CMakeCache.txt
