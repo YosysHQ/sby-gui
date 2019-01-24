@@ -61,7 +61,7 @@ set(SCINTILLA_EDIT_SRC
 aux_source_directory(lexers SCINTILLA_LEXERS_SRC)
 
 add_library(ScintillaEdit STATIC ${SCINTILLA_EDIT_SRC} ${SCINTILLA_LEXERS_SRC})
-target_compile_definitions(ScintillaEdit PRIVATE SCINTILLA_QT=1 SCI_LEXER=1)
+target_compile_definitions(ScintillaEdit PRIVATE SCINTILLA_QT=1 SCI_LEXER=1 EXPORT_IMPORT_API=)
 target_compile_options(ScintillaEdit PRIVATE -Wno-strict-overflow)
 target_include_directories(ScintillaEdit PRIVATE qt/ScintillaEditBase include src lexlib)
 target_link_libraries(ScintillaEdit Qt5::Widgets)
