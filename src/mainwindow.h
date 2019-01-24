@@ -39,6 +39,7 @@ class MainWindow : public QMainWindow
 
   protected:
     QTabWidget *tabWidget;
+    QTabWidget *taskWidget;
     QTabWidget *centralTabWidget;
 
     QMenuBar *menuBar;

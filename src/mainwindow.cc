@@ -28,20 +28,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     QSplitter *splitter_h = new QSplitter(Qt::Horizontal, centralWidget);
     QSplitter *splitter_v = new QSplitter(Qt::Vertical, splitter_h);
-    splitter_h->addWidget(splitter_v);
+    taskWidget = new QTabWidget();
+    taskWidget->setMinimumWidth(200);
+    splitter_h->addWidget(taskWidget);
+    splitter_h->addWidget(splitter_v);            
 
     gridLayout->addWidget(splitter_h, 0, 0, 1, 1);
 
     setCentralWidget(centralWidget);
 
     tabWidget = new QTabWidget();
-
+    tabWidget->setMinimumHeight(200);
     centralTabWidget = new QTabWidget();
     centralTabWidget->setTabsClosable(true);
     connect(centralTabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
 
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
+
+    new_doc();
+    new_doc();
 }
 
 MainWindow::~MainWindow() {}
