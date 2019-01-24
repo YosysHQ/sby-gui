@@ -4,7 +4,9 @@
 #include <QGridLayout>
 #include <QIcon>
 #include <QSplitter>
+#include <QRadioButton>
 #include <QTabBar>
+#include <QScrollArea>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 
@@ -28,9 +30,40 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     QSplitter *splitter_h = new QSplitter(Qt::Horizontal, centralWidget);
     QSplitter *splitter_v = new QSplitter(Qt::Vertical, splitter_h);
-    taskWidget = new QTabWidget();
-    taskWidget->setMinimumWidth(200);
-    splitter_h->addWidget(taskWidget);
+
+
+    QVBoxLayout *gridMain = new QVBoxLayout;
+    QFrame *line = new QFrame(this);
+line->setFrameShape(QFrame::HLine); // Horizontal line
+line->setFrameShadow(QFrame::Sunken);
+line->setLineWidth(2);    
+    QGridLayout *grid = new QGridLayout;
+    grid->addWidget(createFirstExclusiveGroup(), 0, 0);
+    grid->addWidget(line, 1, 0);
+
+    grid->addWidget(createFirstExclusiveGroup(), 2, 0);
+    QFrame *line2 = new QFrame(this);
+line2->setFrameShape(QFrame::HLine); // Horizontal line
+line2->setFrameShadow(QFrame::Sunken);
+line2->setLineWidth(2);  
+    grid->addWidget(line2, 3, 0);
+    grid->addWidget(createFirstExclusiveGroup(), 4, 0);
+    grid->addWidget(line, 5 ,0);
+    grid->addWidget(createFirstExclusiveGroup(), 6, 0);
+
+    QWidget *container = new QWidget();    
+    container->setLayout(grid);
+    
+    QScrollArea *scrollArea = new QScrollArea();
+    //scrollArea->setBackgroundRole(QPalette::Mid);
+    scrollArea->setWidget(container);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    scrollArea->setLayout(gridMain);
+    scrollArea->setMinimumWidth(400);
+    scrollArea->setMaximumWidth(400);
+
+    splitter_h->addWidget(scrollArea);
     splitter_h->addWidget(splitter_v);            
 
     gridLayout->addWidget(splitter_h, 0, 0, 1, 1);
@@ -194,3 +227,51 @@ void MainWindow::open_doc()
 }
 
 void MainWindow::save_doc() {}
+
+QGroupBox *MainWindow::createFirstExclusiveGroup()
+{
+    QGroupBox *fileBox = new QGroupBox(tr("SBY File"));
+    //fileBox->setBackgroundRole(QPalette::Mid);
+    fileBox->setMinimumWidth(370);
+    fileBox->setMaximumWidth(370);
+
+    QGroupBox *groupBox = new QGroupBox(tr("Task"));
+    //groupBox->setBackgroundRole(QPalette::Mid);
+
+{
+    QRadioButton *radio1 = new QRadioButton(tr("&Radio button 1"));
+    QRadioButton *radio2 = new QRadioButton(tr("R&adio button 2"));
+    QRadioButton *radio3 = new QRadioButton(tr("Ra&dio button 3"));
+
+    radio1->setChecked(true);
+    QVBoxLayout *vbox = new QVBoxLayout;
+        vbox->addWidget(radio1);
+        vbox->addWidget(radio2);
+        vbox->addWidget(radio3);
+        vbox->addStretch(1);
+        groupBox->setLayout(vbox);
+}
+    QGroupBox *groupBox2 = new QGroupBox(tr("Task2"));
+    {
+        QRadioButton *radio1 = new QRadioButton(tr("&Radio button 1"));
+        QRadioButton *radio2 = new QRadioButton(tr("R&adio button 2"));
+        QRadioButton *radio3 = new QRadioButton(tr("Ra&dio button 3"));
+
+        radio1->setChecked(true);
+        QVBoxLayout *vbox = new QVBoxLayout;
+            vbox->addWidget(radio1);
+            vbox->addWidget(radio2);
+            vbox->addWidget(radio3);
+            vbox->addStretch(1);
+            groupBox2->setLayout(vbox);
+    }
+
+
+
+
+        QVBoxLayout *vboxFile = new QVBoxLayout;
+            vboxFile->addWidget(groupBox);
+            vboxFile->addWidget(groupBox2);
+         fileBox->setLayout(vboxFile);
+        return fileBox;
+    }

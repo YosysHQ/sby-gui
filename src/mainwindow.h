@@ -7,6 +7,7 @@
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QToolBar>
+#include <QGroupBox>
 
 Q_DECLARE_METATYPE(std::string)
 
@@ -20,6 +21,7 @@ class MainWindow : public QMainWindow
 
   protected:
     void createMenusAndBars();
+    QGroupBox *createFirstExclusiveGroup();
 
   protected Q_SLOTS:
     void closeTab(int index);
@@ -39,7 +41,6 @@ class MainWindow : public QMainWindow
 
   protected:
     QTabWidget *tabWidget;
-    QTabWidget *taskWidget;
     QTabWidget *centralTabWidget;
 
     QMenuBar *menuBar;
