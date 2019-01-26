@@ -1,7 +1,10 @@
 /generated/
 /sby-gui
+/sbytest
 Makefile
 /cmake_install.cmake
 /CMakeFiles
 /CMakeScripts
 /CMakeCache.txt
+/Testing/*
+CTestTestfile.cmake
