@@ -17,10 +17,18 @@
  *
  */
 
-#include "gtest/gtest.h"
+#ifndef SBYPARSER_H
+#define SBYPARSER_H
 
-int main(int argc, char **argv)
+#include <string>
+#include <iostream>
+
+class SBYParser
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+  public:
+    SBYParser();
+
+    bool parse(std::istream &f);
+};
+
+#endif // SBYPARSER_H

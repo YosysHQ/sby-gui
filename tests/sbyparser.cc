@@ -18,9 +18,38 @@
  */
 
 #include "gtest/gtest.h"
+#include "sbyparser.h"
+#include <fstream>
 
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST(SBYParser, empty) {
+    std::stringstream ss("");
+    SBYParser parser;
+    ASSERT_EQ(parser.parse(ss),true);
+}
+
+TEST(SBYParser, invalid_file) {
+    std::ifstream is;
+    is.open("not_existing_file.sby");
+    SBYParser parser;
+    ASSERT_EQ(parser.parse(is),false);
+}
+
+TEST(SBYParser, demo_parse) {
+    std::stringstream ss("");
+    ss << "[options]" << std::endl;
+    ss << "mode bmc" << std::endl;
+    ss << "depth 100" << std::endl;
+    ss << std::endl;
+    ss << "[engines]" << std::endl;
+    ss << "smtbmc" << std::endl;
+    ss << std::endl;
+    ss << "[script]" << std::endl;
+    ss << "read -formal demo.sv" << std::endl;
+    ss << "prep -top demo" << std::endl;
+    ss << std::endl;
+    ss << "[files]" << std::endl;
+    ss << "demo.sv" << std::endl;
+
+    SBYParser parser;
+    ASSERT_EQ(parser.parse(ss),true);
 }
