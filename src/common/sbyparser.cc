@@ -117,10 +117,8 @@
 
 SBYParser::SBYParser() {}
 
-void SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
+std::vector<std::string> SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
 {
-    f.seekg(0, f.beg);
-
     std::vector<std::string> cfgdata;
 
     std::string line;
@@ -130,8 +128,13 @@ void SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
     bool task_skiping_blocks = false;
     bool pycode_section = false;
 
-    for (auto tag : task_tags[taskname])
+    f.clear();
+    f.seekg(0, f.beg);
+
+    for (auto tag : task_tags[taskname]) {
         task_tags_active.emplace(tag);
+    }
+
     while (getline(f, line)) {
         boost::trim_right(line);
         if (tasks_section && boost::starts_with(line, "["))
@@ -177,14 +180,16 @@ void SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
 
             if (tokens.size() > 0 && tokens[0][0] == line[0] && boost::ends_with(tokens[0], ":")) {
                 printf("ERROR: Invalid task specifier \"%s\".", tokens[0].c_str());
-                return;
+                throw log_execution_error_exception();
             }
         }
 
         if (task_skip_line || task_skip_block)
             continue;
 
-        if (line == "[tasks]") {
+        if (tasks_section) {
+            // ignore
+        } else if (line == "[tasks]") {
             tasks_section = true;
         } else if (line == "--pycode-begin--") {
             pycode_section = true;
@@ -192,9 +197,12 @@ void SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
             pycode_section = false;
         } else {
             if (!pycode_section)
+                boost::algorithm::trim(line);
                 cfgdata.push_back(line);
         }
     }
+
+    return cfgdata;
 }
 
 void SBYParser::extract_tasks(std::istream &f)
@@ -233,7 +241,9 @@ bool SBYParser::parse(std::istream &f)
             log_error("Failed to open SBY file.\n");
 
         extract_tasks(f);
-        read_sbyconfig(f, "");
+        for(const auto &task : tasklist) {
+            configs.emplace(task,read_sbyconfig(f, task));
+        }
         return true;
     } catch (log_execution_error_exception) {
         return false;

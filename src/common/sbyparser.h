@@ -34,13 +34,15 @@ class SBYParser
     std::vector<std::string> &get_tasks() { return tasklist; }
     std::vector<std::string> &get_all_tags() { return task_tags_all; }
     std::vector<std::string> &get_tags(std::string task) { return task_tags[task]; }
+    std::vector<std::string> &get_config(std::string task) { return configs[task]; }
   private:
-    void read_sbyconfig(std::istream &f, std::string taskname);
+    std::vector<std::string> read_sbyconfig(std::istream &f, std::string taskname);
     void extract_tasks(std::istream &f);
 
     std::vector<std::string> tasklist;
     std::vector<std::string> task_tags_all;
     std::map<std::string, std::vector<std::string>> task_tags;
+    std::map<std::string, std::vector<std::string>> configs;
 };
 
 #endif // SBYPARSER_H
