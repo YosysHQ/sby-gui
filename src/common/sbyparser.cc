@@ -198,7 +198,7 @@ std::vector<std::string> SBYParser::read_sbyconfig(std::istream &f, std::string 
         } else {
             if (!pycode_section)
                 boost::algorithm::trim(line);
-                cfgdata.push_back(line);
+            cfgdata.push_back(line);
         }
     }
 
@@ -241,9 +241,11 @@ bool SBYParser::parse(std::istream &f)
             log_error("Failed to open SBY file.\n");
 
         extract_tasks(f);
-        for(const auto &task : tasklist) {
-            configs.emplace(task,read_sbyconfig(f, task));
+        for (const auto &task : tasklist) {
+            configs.emplace(task, read_sbyconfig(f, task));
         }
+        if (tasklist.empty())
+            configs.emplace("", read_sbyconfig(f, ""));
         return true;
     } catch (log_execution_error_exception) {
         return false;

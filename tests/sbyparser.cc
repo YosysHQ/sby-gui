@@ -57,6 +57,7 @@ TEST(SBYParser, demo_parse)
     ASSERT_EQ(parser.parse(ss), true);
     std::vector<std::string> tasks = parser.get_tasks();
     ASSERT_EQ(tasks.empty(), true);
+    ASSERT_EQ(parser.get_config("").size(), 13);
 }
 
 TEST(SBYParser, tasks_parse)
@@ -94,6 +95,8 @@ TEST(SBYParser, tasks_parse)
     }
     ASSERT_EQ(parser.get_tags("prf")[0], "prf");
     ASSERT_EQ(parser.get_tags("cvr")[0], "cvr");
+    ASSERT_EQ(parser.get_config("prf").size(), 15);
+    ASSERT_EQ(parser.get_config("cvr").size(), 15);
 }
 
 TEST(SBYParser, multi_tag)
