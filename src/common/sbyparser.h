@@ -20,8 +20,10 @@
 #ifndef SBYPARSER_H
 #define SBYPARSER_H
 
-#include <string>
 #include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
 class SBYParser
 {
@@ -29,6 +31,16 @@ class SBYParser
     SBYParser();
 
     bool parse(std::istream &f);
+    std::vector<std::string> &get_tasks() { return tasklist; }
+    std::vector<std::string> &get_all_tags() { return task_tags_all; }
+    std::vector<std::string> &get_tags(std::string task) { return task_tags[task]; }
+  private:
+    void read_sbyconfig(std::istream &f, std::string taskname);
+    void extract_tasks(std::istream &f);
+
+    std::vector<std::string> tasklist;
+    std::vector<std::string> task_tags_all;
+    std::map<std::string, std::vector<std::string>> task_tags;
 };
 
 #endif // SBYPARSER_H

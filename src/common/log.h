@@ -83,10 +83,7 @@ static inline void log_assert_worker(bool cond, const char *expr, const char *fi
 namespace std {
 template <> struct hash<LogLevel>
 {
-    std::size_t operator()(const LogLevel &loglevel) const noexcept
-    {
-        return std::hash<int>()((int)loglevel);
-    }
+    std::size_t operator()(const LogLevel &loglevel) const noexcept { return std::hash<int>()((int)loglevel); }
 };
 } // namespace std
 

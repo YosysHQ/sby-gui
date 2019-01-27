@@ -39,7 +39,6 @@
 #define SBY_PACKED_STRUCT(...) __VA_ARGS__
 #endif
 
-
 class assertion_failure : public std::runtime_error
 {
   public:

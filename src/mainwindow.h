@@ -20,13 +20,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QGroupBox>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QToolBar>
-#include <QGroupBox>
 
 Q_DECLARE_METATYPE(std::string)
 
