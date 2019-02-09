@@ -18,12 +18,25 @@
  */
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    MainWindow win;
+    QCoreApplication::setApplicationName("SBY Gui");
+    QCoreApplication::setApplicationVersion("1.0");
+    QCommandLineParser parser;
+    parser.addPositionalArgument("source", "Source folder to open");
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.process(app);
+    const QStringList positionalArguments = parser.positionalArguments();
+    if (positionalArguments.size() > 1) {
+        printf("Several source folders have been specified.\n");
+        return -1;
+    }
+    MainWindow win(positionalArguments.size() ? positionalArguments[0] : "");
     win.show();
 
     return app.exec();

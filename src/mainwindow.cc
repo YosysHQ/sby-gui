@@ -28,10 +28,28 @@
 #include <QTabBar>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
+#include "sbyparser.h"
+#include <fstream>
+
+std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, const std::string &extension){
+    std::vector<boost::filesystem::path> files;
+    boost::filesystem::path dir(path);
+    if(boost::filesystem::exists(path) && boost::filesystem::is_directory(path)) {
+        boost::filesystem::directory_iterator it(path);
+        boost::filesystem::directory_iterator endit;
+        while (it != endit) {
+            if(boost::filesystem::is_regular_file(*it) && (extension=="")?true:it->path().extension() == extension) {
+                files.push_back(it->path());
+            }
+            ++it;
+        }
+    }
+    return files;
+}
 
 static void initBasenameResource() { Q_INIT_RESOURCE(base); }
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(QString folder, QWidget *parent) : QMainWindow(parent), currentFolder(folder)
 {
     initBasenameResource();
     qRegisterMetaType<std::string>();
@@ -51,24 +69,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     QSplitter *splitter_v = new QSplitter(Qt::Vertical, splitter_h);
 
     QVBoxLayout *gridMain = new QVBoxLayout;
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine); // Horizontal line
-    line->setFrameShadow(QFrame::Sunken);
-    line->setLineWidth(2);
     QGridLayout *grid = new QGridLayout;
-    grid->addWidget(createFirstExclusiveGroup(), 0, 0);
-    grid->addWidget(line, 1, 0);
 
-    grid->addWidget(createFirstExclusiveGroup(), 2, 0);
-    QFrame *line2 = new QFrame(this);
-    line2->setFrameShape(QFrame::HLine); // Horizontal line
-    line2->setFrameShadow(QFrame::Sunken);
-    line2->setLineWidth(2);
-    grid->addWidget(line2, 3, 0);
-    grid->addWidget(createFirstExclusiveGroup(), 4, 0);
-    grid->addWidget(line, 5, 0);
-    grid->addWidget(createFirstExclusiveGroup(), 6, 0);
+    if (folder.isEmpty()) currentFolder = ".";
+    std::vector<boost::filesystem::path> files = getFilesInDir(folder.toStdString().c_str(), ".sby");
+    int cnt = 0;
+    for(auto file : files) {
+        QFrame *line = new QFrame(this);
+        line->setFrameShape(QFrame::HLine); // Horizontal line
+        line->setFrameShadow(QFrame::Sunken);
+        line->setLineWidth(2);
 
+        grid->addWidget(generateFileBox(file), cnt++, 0);
+        grid->addWidget(line, cnt++, 0);
+
+    }
     QWidget *container = new QWidget();
     container->setLayout(grid);
 
@@ -97,8 +112,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
 
-    new_doc();
-    new_doc();
+    for(auto f : files) {
+        ScintillaEdit *editor = new ScintillaEdit();
+        editor->styleClearAll();
+        editor->setMarginWidthN(0, 35);
+        editor->setScrollWidth(200);
+        editor->setScrollWidthTracking(1);
+        QFile file(f.string().c_str());
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QByteArray contents = file.readAll();
+            editor->get_doc()->insert_string(0, contents);
+        }
+        centralTabWidget->addTab(editor, f.filename().c_str());
+        centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+    }
 }
 
 MainWindow::~MainWindow() {}
@@ -167,27 +194,10 @@ void MainWindow::createMenusAndBars()
 void MainWindow::new_doc()
 {
     ScintillaEdit *editor = new ScintillaEdit();
-    editor->setLexer(SCLEX_PYTHON);
     editor->styleClearAll();
     editor->setMarginWidthN(0, 35);
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
-
-    editor->styleSetFore(SCE_P_DEFAULT, 0x000000);
-    editor->styleSetFore(SCE_P_COMMENTLINE, 0x008000);
-    editor->styleSetFore(SCE_P_NUMBER, 0xFF0000);
-    editor->styleSetFore(SCE_P_STRING, 0x808080);
-    editor->styleSetFore(SCE_P_CHARACTER, 0x808080);
-    editor->styleSetFore(SCE_P_WORD, 0x0000FF);
-    editor->styleSetFore(SCE_P_TRIPLE, 0xFF8000);
-    editor->styleSetFore(SCE_P_TRIPLEDOUBLE, 0xFF8000);
-    editor->styleSetFore(SCE_P_CLASSNAME, 0x000000);
-    editor->styleSetFore(SCE_P_DEFNAME, 0xFF00FF);
-    editor->styleSetFore(SCE_P_OPERATOR, 0x000080);
-    editor->styleSetFore(SCE_P_IDENTIFIER, 0x000000);
-    editor->styleSetFore(SCE_P_COMMENTBLOCK, 0x008000);
-    editor->styleSetFore(SCE_P_DECORATOR, 0xFF8000);
-
     centralTabWidget->addTab(editor, "New");
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
@@ -214,21 +224,6 @@ void MainWindow::open_doc()
         editor->setScrollWidth(200);
         editor->setScrollWidthTracking(1);
 
-        editor->styleSetFore(SCE_P_DEFAULT, 0x000000);
-        editor->styleSetFore(SCE_P_COMMENTLINE, 0x008000);
-        editor->styleSetFore(SCE_P_NUMBER, 0xFF0000);
-        editor->styleSetFore(SCE_P_STRING, 0x808080);
-        editor->styleSetFore(SCE_P_CHARACTER, 0x808080);
-        editor->styleSetFore(SCE_P_WORD, 0x0000FF);
-        editor->styleSetFore(SCE_P_TRIPLE, 0xFF8000);
-        editor->styleSetFore(SCE_P_TRIPLEDOUBLE, 0xFF8000);
-        editor->styleSetFore(SCE_P_CLASSNAME, 0x000000);
-        editor->styleSetFore(SCE_P_DEFNAME, 0xFF00FF);
-        editor->styleSetFore(SCE_P_OPERATOR, 0x000080);
-        editor->styleSetFore(SCE_P_IDENTIFIER, 0x000000);
-        editor->styleSetFore(SCE_P_COMMENTBLOCK, 0x008000);
-        editor->styleSetFore(SCE_P_DECORATOR, 0xFF8000);
-
         QFileInfo finfo(fileName);
         if (finfo.suffix() == "py")
             editor->setLexer(SCLEX_PYTHON);
@@ -246,47 +241,24 @@ void MainWindow::open_doc()
 
 void MainWindow::save_doc() {}
 
-QGroupBox *MainWindow::createFirstExclusiveGroup()
+QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 {
-    QGroupBox *fileBox = new QGroupBox(tr("SBY File"));
-    // fileBox->setBackgroundRole(QPalette::Mid);
+    QGroupBox *fileBox = new QGroupBox(path.filename().c_str());
     fileBox->setMinimumWidth(370);
     fileBox->setMaximumWidth(370);
 
-    QGroupBox *groupBox = new QGroupBox(tr("Task"));
-    // groupBox->setBackgroundRole(QPalette::Mid);
-
-    {
-        QRadioButton *radio1 = new QRadioButton(tr("&Radio button 1"));
-        QRadioButton *radio2 = new QRadioButton(tr("R&adio button 2"));
-        QRadioButton *radio3 = new QRadioButton(tr("Ra&dio button 3"));
-
-        radio1->setChecked(true);
-        QVBoxLayout *vbox = new QVBoxLayout;
-        vbox->addWidget(radio1);
-        vbox->addWidget(radio2);
-        vbox->addWidget(radio3);
-        vbox->addStretch(1);
-        groupBox->setLayout(vbox);
-    }
-    QGroupBox *groupBox2 = new QGroupBox(tr("Task2"));
-    {
-        QRadioButton *radio1 = new QRadioButton(tr("&Radio button 1"));
-        QRadioButton *radio2 = new QRadioButton(tr("R&adio button 2"));
-        QRadioButton *radio3 = new QRadioButton(tr("Ra&dio button 3"));
-
-        radio1->setChecked(true);
-        QVBoxLayout *vbox = new QVBoxLayout;
-        vbox->addWidget(radio1);
-        vbox->addWidget(radio2);
-        vbox->addWidget(radio3);
-        vbox->addStretch(1);
-        groupBox2->setLayout(vbox);
-    }
-
+    SBYParser parser;
+    std::fstream fs;
+    fs.open(path.string().c_str(), std::fstream::in);
+    parser.parse(fs);
+    fs.close();
+    
     QVBoxLayout *vboxFile = new QVBoxLayout;
-    vboxFile->addWidget(groupBox);
-    vboxFile->addWidget(groupBox2);
+    for (auto task : parser.get_tasks())
+    {
+        QGroupBox *groupBox = new QGroupBox(task.c_str());
+        vboxFile->addWidget(groupBox);
+    }
     fileBox->setLayout(vboxFile);
     return fileBox;
 }

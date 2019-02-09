@@ -28,6 +28,9 @@
 #include <QTabWidget>
 #include <QToolBar>
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#include <boost/filesystem.hpp>
+
 Q_DECLARE_METATYPE(std::string)
 
 class MainWindow : public QMainWindow
@@ -35,12 +38,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
   public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QString folder, QWidget *parent = 0);
     virtual ~MainWindow();
 
   protected:
     void createMenusAndBars();
-    QGroupBox *createFirstExclusiveGroup();
+    QGroupBox *generateFileBox(boost::filesystem::path path);
 
   protected Q_SLOTS:
     void closeTab(int index);
@@ -65,6 +68,8 @@ class MainWindow : public QMainWindow
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
+
+    QString currentFolder;
 };
 
 #endif // MAINWINDOW_H
