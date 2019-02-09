@@ -49,8 +49,19 @@ std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, cons
 
 static void initBasenameResource() { Q_INIT_RESOURCE(base); }
 
-MainWindow::MainWindow(QString folder, QWidget *parent) : QMainWindow(parent), currentFolder(folder)
+MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
+    std::vector<boost::filesystem::path> files;
+    if(boost::filesystem::exists(path.toStdString())) {
+        if (boost::filesystem::is_directory(path.toStdString())) {
+            currentFolder = path;
+            files = getFilesInDir(currentFolder.toStdString().c_str(), ".sby");
+        } else {
+            boost::filesystem::path filepath(path.toStdString());
+            currentFolder = filepath.parent_path().string().c_str();
+            files.push_back(filepath);
+        }
+    } 
     initBasenameResource();
     qRegisterMetaType<std::string>();
 
@@ -70,9 +81,7 @@ MainWindow::MainWindow(QString folder, QWidget *parent) : QMainWindow(parent), c
 
     QVBoxLayout *gridMain = new QVBoxLayout;
     QGridLayout *grid = new QGridLayout;
-
-    if (folder.isEmpty()) currentFolder = ".";
-    std::vector<boost::filesystem::path> files = getFilesInDir(folder.toStdString().c_str(), ".sby");
+    
     int cnt = 0;
     for(auto file : files) {
         QFrame *line = new QFrame(this);

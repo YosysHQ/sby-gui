@@ -27,13 +27,13 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("SBY Gui");
     QCoreApplication::setApplicationVersion("1.0");
     QCommandLineParser parser;
-    parser.addPositionalArgument("source", "Source folder to open");
+    parser.addPositionalArgument("source", "Source folder or file to open");
     parser.addHelpOption();
     parser.addVersionOption();
     parser.process(app);
     const QStringList positionalArguments = parser.positionalArguments();
     if (positionalArguments.size() > 1) {
-        printf("Several source folders have been specified.\n");
+        printf("Several source folders/files have been specified.\n");
         return -1;
     }
     MainWindow win(positionalArguments.size() ? positionalArguments[0] : "");
