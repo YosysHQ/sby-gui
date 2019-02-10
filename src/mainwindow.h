@@ -70,6 +70,19 @@ class MainWindow : public QMainWindow
     QStatusBar *statusBar;
 
     QString currentFolder;
+
+    QAction *actionNew;
+    QAction *actionOpen;
+    QAction *actionOpenFolder;
+    QAction *actionSave;
+    QAction *actionSaveAs;
+    QAction *actionExit;
+
+    QAction *actionCut;
+    QAction *actionCopy;
+    QAction *actionPaste;
+    QAction *actionUndo;
+    QAction *actionRedo;
 };
 
 #endif // MAINWINDOW_H
