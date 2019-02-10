@@ -27,6 +27,7 @@
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QToolBar>
+#include <QGridLayout>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -45,6 +46,8 @@ class MainWindow : public QMainWindow
     void createMenusAndBars();
     QGroupBox *generateFileBox(boost::filesystem::path path);
 
+    void openLocation(QString path);
+    void removeLayoutItems(QLayout* layout);
   protected Q_SLOTS:
     void closeTab(int index);
 
@@ -68,6 +71,8 @@ class MainWindow : public QMainWindow
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
+
+    QGridLayout *grid;
 
     QString currentFolder;
 

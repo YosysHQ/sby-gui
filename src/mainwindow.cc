@@ -49,7 +49,25 @@ std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, cons
 
 static void initBasenameResource() { Q_INIT_RESOURCE(base); }
 
-MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
+void MainWindow::removeLayoutItems(QLayout* layout)
+{
+    while(layout->count()!=0)
+    {
+        QLayoutItem* child = layout->takeAt(0);
+        if(child->layout() != 0)
+        {
+            removeLayoutItems(child->layout());
+        }
+        else if(child->widget() != 0)
+        {
+            delete child->widget();
+        }
+
+        delete child;
+    }
+}
+
+void MainWindow::openLocation(QString path)
 {
     std::vector<boost::filesystem::path> files;
     if(boost::filesystem::exists(path.toStdString())) {
@@ -62,6 +80,22 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
             files.push_back(filepath);
         }
     } 
+    removeLayoutItems(grid);
+    // create new widgets
+    int cnt = 0;
+    for(auto file : files) {
+        QFrame *line = new QFrame(this);
+        line->setFrameShape(QFrame::HLine); // Horizontal line
+        line->setFrameShadow(QFrame::Sunken);
+        line->setLineWidth(2);
+
+        grid->addWidget(generateFileBox(file), cnt++, 0);
+        grid->addWidget(line, cnt++, 0);
+    }
+
+}
+MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
+{
     initBasenameResource();
     qRegisterMetaType<std::string>();
 
@@ -79,7 +113,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     QSplitter *splitter_h = new QSplitter(Qt::Horizontal, centralWidget);
     QSplitter *splitter_v = new QSplitter(Qt::Vertical, splitter_h);
 
-    QGridLayout *grid = new QGridLayout;
+    grid = new QGridLayout;
 
     QWidget *container = new QWidget();    
     container->setLayout(grid);
@@ -109,7 +143,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
 
-    for(auto f : files) {
+    /*for(auto f : files) {
         ScintillaEdit *editor = new ScintillaEdit();
         editor->styleClearAll();
         editor->setMarginWidthN(0, 35);
@@ -122,18 +156,9 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
         }
         centralTabWidget->addTab(editor, f.filename().c_str());
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
-    }
+    }*/
         
-    int cnt = 0;
-    for(auto file : files) {
-        QFrame *line = new QFrame(this);
-        line->setFrameShape(QFrame::HLine); // Horizontal line
-        line->setFrameShadow(QFrame::Sunken);
-        line->setLineWidth(2);
-
-        grid->addWidget(generateFileBox(file), cnt++, 0);
-        grid->addWidget(line, cnt++, 0);
-    }
+    openLocation(path);
 }
 
 MainWindow::~MainWindow() {}
@@ -171,10 +196,12 @@ void MainWindow::createMenusAndBars()
     actionOpen->setIcon(QIcon(":/icons/resources/document-open.png"));
     actionOpen->setShortcuts(QKeySequence::Open);
     actionOpen->setStatusTip("Open existing SBY file");
+    connect(actionOpen, &QAction::triggered, this, &MainWindow::open_doc);
+
     menu_File->addAction(actionOpen);
     actionOpenFolder = new QAction("Open Folder...", this);
-    actionOpenFolder->setIcon(QIcon(":/icons/resources/document-open.png"));
-    actionOpenFolder->setStatusTip("Open existing SBY file");
+    actionOpenFolder->setIcon(QIcon(":/icons/resources/folder-open.png"));
+    actionOpenFolder->setStatusTip("Open folder with SBY file(s)");
     menu_File->addAction(actionOpenFolder);
     actionSave = new QAction("Save", this);
     actionSave->setIcon(QIcon(":/icons/resources/document-save.png"));
@@ -199,8 +226,9 @@ void MainWindow::createMenusAndBars()
     menu_File->addSeparator();
     actionExit = new QAction("Exit", this);
     actionExit->setIcon(QIcon(":/icons/resources/system-log-out.png"));
-    actionExit->setShortcuts(QKeySequence::Save);
+    actionExit->setShortcuts(QKeySequence::Quit);
     actionExit->setStatusTip("Exit application");
+    connect(actionExit, &QAction::triggered, this, &MainWindow::close);
     menu_File->addAction(actionExit);
 
     actionUndo = new QAction("Undo", this);
@@ -234,6 +262,11 @@ void MainWindow::createMenusAndBars()
     menu_Search->addAction(new QAction("Go to...", this));
 
     menu_Help->addAction(new QAction("About", this));
+
+    mainToolBar->addAction(actionNew);
+    mainToolBar->addAction(actionOpen);
+    mainToolBar->addAction(actionOpenFolder);
+    mainToolBar->addAction(actionSave);
 }
 
 void MainWindow::new_doc()
@@ -260,27 +293,10 @@ void MainWindow::run_doc() {}
 void MainWindow::open_doc()
 {
     QString fileName =
-            QFileDialog::getOpenFileName(this, QString("Open document"), QString(),
-                                         QString("Python files (*.py);;Verilog files (*.v);;Text files (*.txt)"));
+            QFileDialog::getOpenFileName(this, QString("Open SBY"), QString(),
+                                         QString("SBY files (*.sby)"));
     if (!fileName.isEmpty()) {
-        ScintillaEdit *editor = new ScintillaEdit();
-        editor->styleClearAll();
-        editor->setMarginWidthN(0, 35);
-        editor->setScrollWidth(200);
-        editor->setScrollWidthTracking(1);
-
-        QFileInfo finfo(fileName);
-        if (finfo.suffix() == "py")
-            editor->setLexer(SCLEX_PYTHON);
-
-        centralTabWidget->addTab(editor, finfo.fileName());
-        centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
-
-        QFile file(fileName);
-        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QByteArray contents = file.readAll();
-            editor->get_doc()->insert_string(0, contents);
-        }
+        openLocation(fileName);
     }
 }
 
