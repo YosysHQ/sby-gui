@@ -79,21 +79,9 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     QSplitter *splitter_h = new QSplitter(Qt::Horizontal, centralWidget);
     QSplitter *splitter_v = new QSplitter(Qt::Vertical, splitter_h);
 
-    QVBoxLayout *gridMain = new QVBoxLayout;
     QGridLayout *grid = new QGridLayout;
-    
-    int cnt = 0;
-    for(auto file : files) {
-        QFrame *line = new QFrame(this);
-        line->setFrameShape(QFrame::HLine); // Horizontal line
-        line->setFrameShadow(QFrame::Sunken);
-        line->setLineWidth(2);
 
-        grid->addWidget(generateFileBox(file), cnt++, 0);
-        grid->addWidget(line, cnt++, 0);
-
-    }
-    QWidget *container = new QWidget();
+    QWidget *container = new QWidget();    
     container->setLayout(grid);
 
     QScrollArea *scrollArea = new QScrollArea();
@@ -101,9 +89,9 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     scrollArea->setWidget(container);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    scrollArea->setLayout(gridMain);
     scrollArea->setMinimumWidth(400);
     scrollArea->setMaximumWidth(400);
+    scrollArea->setWidgetResizable(true);
 
     splitter_h->addWidget(scrollArea);
     splitter_h->addWidget(splitter_v);
@@ -134,6 +122,17 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
         }
         centralTabWidget->addTab(editor, f.filename().c_str());
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+    }
+        
+    int cnt = 0;
+    for(auto file : files) {
+        QFrame *line = new QFrame(this);
+        line->setFrameShape(QFrame::HLine); // Horizontal line
+        line->setFrameShadow(QFrame::Sunken);
+        line->setLineWidth(2);
+
+        grid->addWidget(generateFileBox(file), cnt++, 0);
+        grid->addWidget(line, cnt++, 0);
     }
 }
 
