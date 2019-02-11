@@ -51,14 +51,8 @@ class MainWindow : public QMainWindow
   protected Q_SLOTS:
     void closeTab(int index);
 
-    void new_proj();
-    void open_proj();
-    bool save_proj();
-    void new_doc();
-    void execute_doc();
-    void run_doc();
-    void open_doc();
-    void save_doc();
+    void open_sby();
+    void open_folder();
   Q_SIGNALS:
     void updateTreeView();
     void executePython(QString content);

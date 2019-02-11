@@ -196,12 +196,13 @@ void MainWindow::createMenusAndBars()
     actionOpen->setIcon(QIcon(":/icons/resources/document-open.png"));
     actionOpen->setShortcuts(QKeySequence::Open);
     actionOpen->setStatusTip("Open existing SBY file");
-    connect(actionOpen, &QAction::triggered, this, &MainWindow::open_doc);
+    connect(actionOpen, &QAction::triggered, this, &MainWindow::open_sby);
 
     menu_File->addAction(actionOpen);
     actionOpenFolder = new QAction("Open Folder...", this);
     actionOpenFolder->setIcon(QIcon(":/icons/resources/folder-open.png"));
     actionOpenFolder->setStatusTip("Open folder with SBY file(s)");
+    connect(actionOpenFolder, &QAction::triggered, this, &MainWindow::open_folder);
     menu_File->addAction(actionOpenFolder);
     actionSave = new QAction("Save", this);
     actionSave->setIcon(QIcon(":/icons/resources/document-save.png"));
@@ -269,28 +270,7 @@ void MainWindow::createMenusAndBars()
     mainToolBar->addAction(actionSave);
 }
 
-void MainWindow::new_doc()
-{
-    ScintillaEdit *editor = new ScintillaEdit();
-    editor->styleClearAll();
-    editor->setMarginWidthN(0, 35);
-    editor->setScrollWidth(200);
-    editor->setScrollWidthTracking(1);
-    centralTabWidget->addTab(editor, "New");
-    centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
-}
-
-void MainWindow::new_proj() {}
-
-void MainWindow::open_proj() {}
-
-bool MainWindow::save_proj() { return false; }
-
-void MainWindow::execute_doc() {}
-
-void MainWindow::run_doc() {}
-
-void MainWindow::open_doc()
+void MainWindow::open_sby()
 {
     QString fileName =
             QFileDialog::getOpenFileName(this, QString("Open SBY"), QString(),
@@ -300,8 +280,17 @@ void MainWindow::open_doc()
     }
 }
 
-void MainWindow::save_doc() {}
-
+void MainWindow::open_folder()
+{
+    QString folderName =
+            QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                QString(),
+                                                QFileDialog::ShowDirsOnly
+                                                | QFileDialog::DontResolveSymlinks);
+    if (!folderName.isEmpty()) {
+        openLocation(folderName);
+    }
+}
 QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 {
     QGroupBox *fileBox = new QGroupBox(path.filename().c_str());
