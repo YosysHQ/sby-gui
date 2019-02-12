@@ -26,6 +26,8 @@
 #include <QScrollArea>
 #include <QSplitter>
 #include <QTabBar>
+#include <QProgressBar>
+#include <QHBoxLayout>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 #include "sbyparser.h"
@@ -84,13 +86,7 @@ void MainWindow::openLocation(QString path)
     // create new widgets
     int cnt = 0;
     for(auto file : files) {
-        QFrame *line = new QFrame(this);
-        line->setFrameShape(QFrame::HLine); // Horizontal line
-        line->setFrameShadow(QFrame::Sunken);
-        line->setLineWidth(2);
-
         grid->addWidget(generateFileBox(file), cnt++, 0);
-        grid->addWidget(line, cnt++, 0);
     }
 
 }
@@ -294,6 +290,9 @@ void MainWindow::open_folder()
 QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 {
     QGroupBox *fileBox = new QGroupBox(path.filename().c_str());
+
+    QString styleFileBox = "QGroupBox { border: 3px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
+    fileBox->setStyleSheet(styleFileBox);     
     fileBox->setMinimumWidth(370);
     fileBox->setMaximumWidth(370);
 
@@ -304,9 +303,57 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     fs.close();
     
     QVBoxLayout *vboxFile = new QVBoxLayout;
+
+    QHBoxLayout *hboxFile = new QHBoxLayout;
+
+    QProgressBar *fileProgressBar = new QProgressBar();
+    fileProgressBar->setValue(100);
+    QToolBar *toolBarFile = new QToolBar();
+    QAction *actionPlayFile = new QAction("Play", this);
+    actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
+    toolBarFile->addAction(actionPlayFile);
+    QAction *actionPauseFile = new QAction("Pause", this);
+    actionPauseFile->setIcon(QIcon(":/icons/resources/media-playback-pause.png"));    
+    toolBarFile->addAction(actionPauseFile);
+    QAction *actionStopFile = new QAction("Stop", this);
+    actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+    toolBarFile->addAction(actionStopFile);
+
+    hboxFile->addWidget(fileProgressBar);
+    hboxFile->addWidget(toolBarFile);
+    QWidget *dummyFile = new QWidget();
+    dummyFile->setLayout(hboxFile);
+    vboxFile->addWidget(dummyFile);
+
+    QString styleTaskBox = "QGroupBox { border: 1px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
     for (auto task : parser.get_tasks())
     {
         QGroupBox *groupBox = new QGroupBox(task.c_str());
+        groupBox->setStyleSheet(styleTaskBox);     
+
+        QVBoxLayout *vbox = new QVBoxLayout;        
+        QProgressBar *progressBar = new QProgressBar();
+        progressBar->setValue(0);
+
+        QHBoxLayout *hbox = new QHBoxLayout;
+
+        QToolBar *toolBar = new QToolBar();
+        QAction *actionPlay = new QAction("Play", this);
+        actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
+        toolBar->addAction(actionPlay);
+        QAction *actionPause = new QAction("Pause", this);
+        actionPause->setIcon(QIcon(":/icons/resources/media-playback-pause.png"));    
+        toolBar->addAction(actionPause);
+        QAction *actionStop = new QAction("Stop", this);
+        actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+        toolBar->addAction(actionStop);
+
+        hbox->addWidget(progressBar);
+        hbox->addWidget(toolBar);
+        QWidget *dummy = new QWidget();
+        dummy->setLayout(hbox);
+        vbox->addWidget(dummy);
+        groupBox->setLayout(vbox);
         vboxFile->addWidget(groupBox);
     }
     fileBox->setLayout(vboxFile);
