@@ -209,6 +209,9 @@ void MainWindow::createMenusAndBars()
     actionSaveAs->setIcon(QIcon(":/icons/resources/document-save-as.png"));
     actionSaveAs->setStatusTip("Save SBY under different name");
     menu_File->addAction(actionSaveAs);
+    actionRefresh = new QAction("Refresh", this);
+    actionRefresh->setIcon(QIcon(":/icons/resources/view-refresh.png"));
+    menu_File->addAction(actionSaveAs);
     menu_File->addAction(new QAction("Save All", this));
     menu_File->addAction(new QAction("Rename...", this));
     menu_File->addAction(new QAction("Close", this));
@@ -264,6 +267,7 @@ void MainWindow::createMenusAndBars()
     mainToolBar->addAction(actionOpen);
     mainToolBar->addAction(actionOpenFolder);
     mainToolBar->addAction(actionSave);
+    mainToolBar->addAction(actionRefresh);
 }
 
 void MainWindow::open_sby()
@@ -318,6 +322,12 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QAction *actionStopFile = new QAction("Stop", this);
     actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
     toolBarFile->addAction(actionStopFile);
+    QAction *actionRefreshFile = new QAction("Refresh", this);
+    actionRefreshFile->setIcon(QIcon(":/icons/resources/view-refresh.png"));    
+    toolBarFile->addAction(actionRefreshFile);
+    QAction *actionEditFile = new QAction("Edit", this);
+    actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+    toolBarFile->addAction(actionEditFile);
 
     hboxFile->addWidget(fileProgressBar);
     hboxFile->addWidget(toolBarFile);

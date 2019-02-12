@@ -75,6 +75,7 @@ class MainWindow : public QMainWindow
     QAction *actionOpenFolder;
     QAction *actionSave;
     QAction *actionSaveAs;
+    QAction *actionRefresh;
     QAction *actionExit;
 
     QAction *actionCut;

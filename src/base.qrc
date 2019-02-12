@@ -58,5 +58,6 @@
         <file>resources/user-trash.png</file>
         <file>resources/help-browser.png</file>
         <file>resources/weather-clear.png</file>
+        <file>resources/text-x-generic.png</file>
     </qresource>
 </RCC>
