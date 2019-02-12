@@ -316,15 +316,9 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QAction *actionPlayFile = new QAction("Play", this);
     actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
     toolBarFile->addAction(actionPlayFile);
-    QAction *actionPauseFile = new QAction("Pause", this);
-    actionPauseFile->setIcon(QIcon(":/icons/resources/media-playback-pause.png"));    
-    toolBarFile->addAction(actionPauseFile);
     QAction *actionStopFile = new QAction("Stop", this);
     actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
     toolBarFile->addAction(actionStopFile);
-    QAction *actionRefreshFile = new QAction("Refresh", this);
-    actionRefreshFile->setIcon(QIcon(":/icons/resources/view-refresh.png"));    
-    toolBarFile->addAction(actionRefreshFile);
     QAction *actionEditFile = new QAction("Edit", this);
     actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
     toolBarFile->addAction(actionEditFile);
@@ -351,12 +345,12 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         QAction *actionPlay = new QAction("Play", this);
         actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
         toolBar->addAction(actionPlay);
-        QAction *actionPause = new QAction("Pause", this);
-        actionPause->setIcon(QIcon(":/icons/resources/media-playback-pause.png"));    
-        toolBar->addAction(actionPause);
         QAction *actionStop = new QAction("Stop", this);
         actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
         toolBar->addAction(actionStop);
+        QAction *actionView = new QAction("View", this);
+        actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+        toolBar->addAction(actionView);
 
         hbox->addWidget(progressBar);
         hbox->addWidget(toolBar);
