@@ -137,8 +137,13 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     tabWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     tabWidget->setMinimumHeight(200);
     tabWidget->setMaximumHeight(200);
+
+    QFont f("unexistent");
+    f.setStyleHint(QFont::Monospace);
+
     log = new QPlainTextEdit();
     log->setReadOnly(true);
+    log->setFont(f);
     tabWidget->addTab(log, "Log");    
 
     centralTabWidget = new QTabWidget();
