@@ -34,6 +34,8 @@
 
 Q_DECLARE_METATYPE(std::string)
 
+class ScintillaEdit;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -48,6 +50,11 @@ class MainWindow : public QMainWindow
 
     void openLocation(QString path);
     void removeLayoutItems(QLayout* layout);
+    void previewOpen(boost::filesystem::path path, std::string task);
+    void editOpen(boost::filesystem::path path);
+    ScintillaEdit *openEditor();
+    ScintillaEdit *openEditorFile(std::string fullpath);
+    ScintillaEdit *openEditorText(std::string text);
   protected Q_SLOTS:
     void closeTab(int index);
 

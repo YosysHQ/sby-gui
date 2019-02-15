@@ -139,21 +139,6 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
 
-    /*for(auto f : files) {
-        ScintillaEdit *editor = new ScintillaEdit();
-        editor->styleClearAll();
-        editor->setMarginWidthN(0, 35);
-        editor->setScrollWidth(200);
-        editor->setScrollWidthTracking(1);
-        QFile file(f.string().c_str());
-        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QByteArray contents = file.readAll();
-            editor->get_doc()->insert_string(0, contents);
-        }
-        centralTabWidget->addTab(editor, f.filename().c_str());
-        centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
-    }*/
-        
     openLocation(path);
 }
 
@@ -321,6 +306,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     toolBarFile->addAction(actionStopFile);
     QAction *actionEditFile = new QAction("Edit", this);
     actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+    connect(actionEditFile, &QAction::triggered, [=]() { editOpen(path); });
     toolBarFile->addAction(actionEditFile);
 
     hboxFile->addWidget(fileProgressBar);
@@ -349,7 +335,9 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
         toolBar->addAction(actionStop);
         QAction *actionView = new QAction("View", this);
-        actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+        actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
+        connect(actionView, &QAction::triggered,   
+            [=]() { previewOpen(path, task); });
         toolBar->addAction(actionView);
 
         hbox->addWidget(progressBar);
@@ -362,4 +350,73 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     }
     fileBox->setLayout(vboxFile);
     return fileBox;
+}
+
+ScintillaEdit *MainWindow::openEditor()
+{
+    ScintillaEdit *editor = new ScintillaEdit();
+    editor->styleClearAll();
+    editor->setMarginWidthN(0, 35);
+    editor->setScrollWidth(200);
+    editor->setScrollWidthTracking(1);
+    return editor;
+}
+
+ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
+{
+    ScintillaEdit *editor = openEditor();
+    QFile file(fullpath.c_str());
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QByteArray contents = file.readAll();
+        editor->get_doc()->insert_string(0, contents);
+    }
+    return editor;
+}
+
+ScintillaEdit *MainWindow::openEditorText(std::string text)
+{
+    ScintillaEdit *editor = openEditor();
+    QByteArray contents;
+    contents.append(text.c_str());
+    editor->get_doc()->insert_string(0, contents);
+    return editor;
+}
+
+void MainWindow::previewOpen(boost::filesystem::path path, std::string task)
+{
+    std::string name = path.filename().string() + "#" + task;
+ 
+    for(int i=0;i<centralTabWidget->count();i++) {
+        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+            centralTabWidget->setCurrentIndex(i); 
+            return; 
+        } 
+    }
+    
+    SBYParser parser;
+    std::fstream fs;
+    fs.open(path.string().c_str(), std::fstream::in);
+    parser.parse(fs);
+    fs.close();
+
+    ScintillaEdit *editor = openEditorText(parser.get_config_content(task));
+    editor->setReadOnly(true);
+
+    centralTabWidget->addTab(editor, name.c_str());
+    centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+}
+
+void MainWindow::editOpen(boost::filesystem::path path)
+{
+    std::string name = path.filename().string();
+    for(int i=0;i<centralTabWidget->count();i++) {
+        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+            centralTabWidget->setCurrentIndex(i); 
+            return; 
+        } 
+    }
+    ScintillaEdit *editor = openEditorFile(path.string());
+
+    centralTabWidget->addTab(editor, name.c_str());
+    centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }

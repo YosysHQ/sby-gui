@@ -21,6 +21,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <iostream>
+#include <sstream>
 #include "common.h"
 #include "log.h"
 
@@ -250,4 +251,13 @@ bool SBYParser::parse(std::istream &f)
     } catch (log_execution_error_exception) {
         return false;
     }
+}
+
+std::string SBYParser::get_config_content(std::string task)
+{
+    std::stringstream val;
+    for(auto line : configs[task]) {
+        val << line << std::endl;
+    }
+    return val.str();
 }
