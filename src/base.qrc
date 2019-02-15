@@ -59,5 +59,7 @@
         <file>resources/help-browser.png</file>
         <file>resources/weather-clear.png</file>
         <file>resources/text-x-generic.png</file>
+        <file>resources/disk.png</file>
+        <file>resources/script.png</file>
     </qresource>
 </RCC>

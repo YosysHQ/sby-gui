@@ -134,6 +134,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     tabWidget->setMinimumHeight(200);
     centralTabWidget = new QTabWidget();
     centralTabWidget->setTabsClosable(true);
+    centralTabWidget->setMovable(true);
     connect(centralTabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
 
     splitter_v->addWidget(centralTabWidget);
@@ -416,7 +417,16 @@ void MainWindow::editOpen(boost::filesystem::path path)
         } 
     }
     ScintillaEdit *editor = openEditorFile(path.string());
+    connect(editor, &ScintillaEdit::modified, [=]() { 
+        for(int i=0;i<centralTabWidget->count();i++) {
+            if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+                centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
+                centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
+                return; 
+            } 
+        }
+    });
 
-    centralTabWidget->addTab(editor, name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
