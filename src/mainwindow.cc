@@ -305,6 +305,22 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     fs.open(path.string().c_str(), std::fstream::in);
     parser.parse(fs);
     fs.close();
+
+    bool sbyStatus = false;
+    int status = 0;
+    if (parser.get_tasks().size() == 0) {
+        boost::filesystem::path dir = path.parent_path().string();
+        dir /= path.stem();
+        if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
+            sbyStatus = true;
+            if (boost::filesystem::exists(dir / "PASS")) {
+                status = 1;
+            }
+            if (boost::filesystem::exists(dir / "ERROR")) {
+                status = 2;
+            }
+        }
+    }
     
     QVBoxLayout *vboxFile = new QVBoxLayout;
 
@@ -312,7 +328,16 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 
     QProgressBar *fileProgressBar = new QProgressBar();
     fileProgressBar->setValue(100);
-    QToolBar *toolBarFile = new QToolBar();
+    QToolBar *toolBarFile = new QToolBar();    
+    QAction *statusIcon;
+    switch(status) {
+        default:
+        case 0 : statusIcon = new QAction(QIcon(":/icons/resources/question.png"),"Unknown", this);  break;
+        case 1 : statusIcon = new QAction(QIcon(":/icons/resources/check.png"),"PASS", this); break;
+        case 2 : statusIcon = new QAction(QIcon(":/icons/resources/close.png"),"ERROR", this); break;
+    }
+    toolBarFile->addAction(statusIcon);
+
     QAction *actionPlayFile = new QAction("Play", this);
     actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
     connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path); });   
@@ -334,6 +359,18 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QString styleTaskBox = "QGroupBox { border: 1px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
     for (auto task : parser.get_tasks())
     {
+        status = 0;
+        boost::filesystem::path dir = path.parent_path().string();
+        dir /= (path.stem().string() + "_" + task);
+        if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
+            sbyStatus = true;
+            if (boost::filesystem::exists(dir / "PASS")) {
+                status = 1;
+            }
+            if (boost::filesystem::exists(dir / "ERROR")) {
+                status = 2;
+            }
+        }
         QGroupBox *groupBox = new QGroupBox(task.c_str());
         groupBox->setStyleSheet(styleTaskBox);     
 
@@ -344,6 +381,14 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         QHBoxLayout *hbox = new QHBoxLayout;
 
         QToolBar *toolBar = new QToolBar();
+        QAction *taskStatusIcon;
+        switch(status) {
+            default:
+            case 0 : taskStatusIcon = new QAction(QIcon(":/icons/resources/question.png"),"Unknown", this);  break;
+            case 1 : taskStatusIcon = new QAction(QIcon(":/icons/resources/check.png"),"PASS", this); break;
+            case 2 : taskStatusIcon = new QAction(QIcon(":/icons/resources/close.png"),"ERROR", this); break;
+        }
+        toolBar->addAction(taskStatusIcon);        
         QAction *actionPlay = new QAction("Play", this);
         actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
         connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task); });   
