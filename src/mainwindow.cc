@@ -98,6 +98,8 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     setObjectName(QStringLiteral("MainWindow"));
     resize(1024, 768);
 
+    setWindowIcon(QIcon(":/icons/resources/symbiotic.png"));
+
     createMenusAndBars();
 
     QWidget *centralWidget = new QWidget(this);

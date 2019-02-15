@@ -61,5 +61,6 @@
         <file>resources/text-x-generic.png</file>
         <file>resources/disk.png</file>
         <file>resources/script.png</file>
+        <file>resources/symbiotic.png</file>
     </qresource>
 </RCC>
