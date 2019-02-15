@@ -28,6 +28,8 @@
 #include <QTabWidget>
 #include <QToolBar>
 #include <QGridLayout>
+#include <QProcess>
+#include <QPlainTextEdit>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -55,11 +57,14 @@ class MainWindow : public QMainWindow
     ScintillaEdit *openEditor();
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text);
+    void runSBYFile(boost::filesystem::path path);
+    void runSBYTask(boost::filesystem::path path, std::string task);
   protected Q_SLOTS:
     void closeTab(int index);
 
     void open_sby();
     void open_folder();
+    void printOutput();
   Q_SIGNALS:
     void updateTreeView();
     void executePython(QString content);
@@ -90,6 +95,9 @@ class MainWindow : public QMainWindow
     QAction *actionPaste;
     QAction *actionUndo;
     QAction *actionRedo;
+    QProcess *process;
+    QPlainTextEdit *log;
+    QByteArray buffer;
 };
 
 #endif // MAINWINDOW_H

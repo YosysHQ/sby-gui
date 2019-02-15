@@ -28,6 +28,7 @@
 #include <QTabBar>
 #include <QProgressBar>
 #include <QHBoxLayout>
+#include <QTextCursor>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 #include "sbyparser.h"
@@ -133,7 +134,13 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     setCentralWidget(centralWidget);
 
     tabWidget = new QTabWidget();
+    tabWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     tabWidget->setMinimumHeight(200);
+    tabWidget->setMaximumHeight(200);
+    log = new QPlainTextEdit();
+    log->setReadOnly(true);
+    tabWidget->addTab(log, "Log");    
+
     centralTabWidget = new QTabWidget();
     centralTabWidget->setTabsClosable(true);
     centralTabWidget->setMovable(true);
@@ -221,24 +228,24 @@ void MainWindow::createMenusAndBars()
 
     actionUndo = new QAction("Undo", this);
     actionUndo->setIcon(QIcon(":/icons/resources/edit-undo.png"));
-    actionUndo->setShortcuts(QKeySequence::Undo);
+    //actionUndo->setShortcuts(QKeySequence::Undo);
     menu_Edit->addAction(actionUndo);
     actionRedo = new QAction("Redo", this);
     actionRedo->setIcon(QIcon(":/icons/resources/edit-redo.png"));
-    actionRedo->setShortcuts(QKeySequence::Redo);
+    //actionRedo->setShortcuts(QKeySequence::Redo);
     menu_Edit->addAction(actionRedo);
     menu_Edit->addSeparator();
     actionCut = new QAction("Cut", this);
     actionCut->setIcon(QIcon(":/icons/resources/edit-cut.png"));
-    actionCut->setShortcuts(QKeySequence::Cut);
+    //actionCut->setShortcuts(QKeySequence::Cut);
     menu_Edit->addAction(actionCut);
     actionCopy = new QAction("Copy", this);
     actionCopy->setIcon(QIcon(":/icons/resources/edit-copy.png"));
-    actionCopy->setShortcuts(QKeySequence::Copy);
+    //actionCopy->setShortcuts(QKeySequence::Copy);
     menu_Edit->addAction(actionCopy);
     actionPaste = new QAction("Paste", this);
     actionPaste->setIcon(QIcon(":/icons/resources/edit-paste.png"));
-    actionPaste->setShortcuts(QKeySequence::Paste);
+    //actionPaste->setShortcuts(QKeySequence::Paste);
     menu_Edit->addAction(actionPaste);
     menu_Edit->addAction(new QAction("Delete", this));
     menu_Edit->addAction(new QAction("Select All", this));
@@ -302,7 +309,8 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     fileProgressBar->setValue(100);
     QToolBar *toolBarFile = new QToolBar();
     QAction *actionPlayFile = new QAction("Play", this);
-    actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
+    actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
+    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path); });   
     toolBarFile->addAction(actionPlayFile);
     QAction *actionStopFile = new QAction("Stop", this);
     actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
@@ -333,14 +341,14 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         QToolBar *toolBar = new QToolBar();
         QAction *actionPlay = new QAction("Play", this);
         actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
+        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task); });   
         toolBar->addAction(actionPlay);
         QAction *actionStop = new QAction("Stop", this);
         actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
         toolBar->addAction(actionStop);
         QAction *actionView = new QAction("View", this);
         actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
-        connect(actionView, &QAction::triggered,   
-            [=]() { previewOpen(path, task); });
+        connect(actionView, &QAction::triggered, [=]() { previewOpen(path, task); });
         toolBar->addAction(actionView);
 
         hbox->addWidget(progressBar);
@@ -431,4 +439,46 @@ void MainWindow::editOpen(boost::filesystem::path path)
 
     centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+}
+
+void MainWindow::printOutput()
+{
+    buffer.append(process->readAllStandardOutput());
+    log->setPlainText(buffer);
+    QTextCursor cursor = log->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    log->setTextCursor(cursor);    
+}
+
+void MainWindow::runSBYFile(boost::filesystem::path path)
+{
+    buffer.clear();
+    process = new QProcess;
+    QStringList args;
+    args << "-f";
+    args << path.filename().string().c_str();
+    process->setProgram("sby");
+    process->setArguments(args);
+    process->setWorkingDirectory(path.parent_path().string().c_str());
+    process->setProcessChannelMode(QProcess::MergedChannels);  
+    connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
+    process->start();
+    process->waitForFinished();
+}
+
+void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
+{
+    buffer.clear();
+    process = new QProcess;
+    QStringList args;
+    args << "-f";
+    args << path.filename().string().c_str();
+    args << task.c_str();
+    process->setProgram("sby");
+    process->setArguments(args);
+    process->setWorkingDirectory(path.parent_path().string().c_str());
+    process->setProcessChannelMode(QProcess::MergedChannels);  
+    connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
+    process->start();
+    process->waitForFinished();
 }
