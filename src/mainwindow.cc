@@ -509,11 +509,14 @@ void MainWindow::runSBYFile(boost::filesystem::path path)
     args << path.filename().string().c_str();
     process->setProgram("sby");
     process->setArguments(args);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("YOSYS_NOVERIFIC","1");
+    env.insert("PYTHONUNBUFFERED","1");
+    process->setProcessEnvironment(env);
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     process->start();
-    process->waitForFinished();
 }
 
 void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
@@ -526,9 +529,12 @@ void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
     args << task.c_str();
     process->setProgram("sby");
     process->setArguments(args);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("YOSYS_NOVERIFIC","1");
+    env.insert("PYTHONUNBUFFERED","1");
+    process->setProcessEnvironment(env);
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     process->start();
-    process->waitForFinished();
 }
