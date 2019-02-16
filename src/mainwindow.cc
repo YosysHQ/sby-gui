@@ -493,16 +493,15 @@ void MainWindow::editOpen(boost::filesystem::path path)
 
 void MainWindow::printOutput()
 {
-    buffer.append(process->readAllStandardOutput());
-    log->setPlainText(buffer);
-    QTextCursor cursor = log->textCursor();
-    cursor.movePosition(QTextCursor::End);
-    log->setTextCursor(cursor);    
+    QString data = QString(process->readAllStandardOutput());
+    log->moveCursor(QTextCursor::End);
+    log->insertPlainText (data);
+    log->moveCursor(QTextCursor::End);
 }
 
 void MainWindow::runSBYFile(boost::filesystem::path path)
 {
-    buffer.clear();
+    log->clear();
     process = new QProcess;
     QStringList args;
     args << "-f";
@@ -521,7 +520,7 @@ void MainWindow::runSBYFile(boost::filesystem::path path)
 
 void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
 {
-    buffer.clear();
+    log->clear();
     process = new QProcess;
     QStringList args;
     args << "-f";

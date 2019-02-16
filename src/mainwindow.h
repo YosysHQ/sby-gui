@@ -97,7 +97,6 @@ class MainWindow : public QMainWindow
     QAction *actionRedo;
     QProcess *process;
     QPlainTextEdit *log;
-    QByteArray buffer;
 };
 
 #endif // MAINWINDOW_H
