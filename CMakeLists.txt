@@ -23,7 +23,7 @@ endif()
 set(boost_libs filesystem)
 find_package(Boost REQUIRED COMPONENTS ${boost_libs})
 # Find the Qt5 libraries
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Widgets Xml REQUIRED)
 
 add_subdirectory(3rdparty/scintilla ${CMAKE_CURRENT_BINARY_DIR}/generated/3rdparty/ScintillaEdit)
 add_subdirectory(src ${CMAKE_CURRENT_BINARY_DIR}/generated/src)

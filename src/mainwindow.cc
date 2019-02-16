@@ -29,6 +29,8 @@
 #include <QProgressBar>
 #include <QHBoxLayout>
 #include <QTextCursor>
+#include <QtXml>
+#include <QFile>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 #include "sbyparser.h"
@@ -319,7 +321,17 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
             if (boost::filesystem::exists(dir / "ERROR")) {
                 status = 2;
             }
-        }
+            
+            boost::filesystem::path xmlFile = dir / path.stem();
+            xmlFile.replace_extension("xml");
+            if (boost::filesystem::exists(xmlFile)) {
+                QDomDocument xml;
+                QFile f(xmlFile.string().c_str());
+                f.open(QIODevice::ReadOnly);
+                xml.setContent(&f);
+                f.close();
+            }
+        }        
     }
     
     QVBoxLayout *vboxFile = new QVBoxLayout;
@@ -340,13 +352,16 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 
     QAction *actionPlayFile = new QAction("Play", this);
     actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
-    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path); });   
     toolBarFile->addAction(actionPlayFile);
     QAction *actionStopFile = new QAction("Stop", this);
     actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+    actionStopFile->setEnabled(false);
     toolBarFile->addAction(actionStopFile);
     QAction *actionEditFile = new QAction("Edit", this);
     actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+
+    connect(actionPlayFile, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(false); actionStopFile->setEnabled(true);*/ runSBYFile(path); });   
+    connect(actionStopFile, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(true); actionStopFile->setEnabled(false); */ process->terminate(); });
     connect(actionEditFile, &QAction::triggered, [=]() { editOpen(path); });
     toolBarFile->addAction(actionEditFile);
 
@@ -391,13 +406,15 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         toolBar->addAction(taskStatusIcon);        
         QAction *actionPlay = new QAction("Play", this);
         actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
-        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task); });   
         toolBar->addAction(actionPlay);
         QAction *actionStop = new QAction("Stop", this);
         actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+        actionStop->setEnabled(false);
         toolBar->addAction(actionStop);
         QAction *actionView = new QAction("View", this);
         actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
+        connect(actionPlay, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(false); actionStopFile->setEnabled(true);*/ runSBYTask(path, task); });  
+        connect(actionStop, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(true); actionStopFile->setEnabled(false);*/ process->terminate(); });
         connect(actionView, &QAction::triggered, [=]() { previewOpen(path, task); });
         toolBar->addAction(actionView);
 
@@ -515,6 +532,8 @@ void MainWindow::runSBYFile(boost::filesystem::path path)
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
+    connect(process, &QProcess::started, [=]() { printf("started\n"); });
+    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { printf("finished %d\n",exitCode); });
     process->start();
 }
 
@@ -535,5 +554,7 @@ void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
+    connect(process, &QProcess::started, [=]() { printf("started\n"); });
+    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { printf("finished %d\n",exitCode); });
     process->start();
 }
