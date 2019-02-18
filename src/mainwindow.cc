@@ -100,6 +100,8 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     initBasenameResource();
     qRegisterMetaType<std::string>();
 
+    process = nullptr;
+
     setObjectName(QStringLiteral("MainWindow"));
     resize(1024, 768);
 
@@ -159,6 +161,28 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     splitter_v->addWidget(tabWidget);
 
     openLocation(path);
+
+    taskTimer = new QTime;
+    taskTimer->start();
+    
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &MainWindow::showTime);
+    timer->start(1000);
+}
+
+void MainWindow::showTime()
+{
+    if (process==nullptr)  {
+        timeDisplay->setText("");
+        return;
+    }
+    QTime time = QTime::fromMSecsSinceStartOfDay(taskTimer->elapsed());
+    QString text = time.toString("hh:mm:ss");
+    if ((time.second() % 2) == 0) {
+        text[2] = ' ';
+        text[5] = ' ';
+    }
+    timeDisplay->setText(text);
 }
 
 MainWindow::~MainWindow() {}
@@ -184,7 +208,11 @@ void MainWindow::createMenusAndBars()
     mainToolBar = new QToolBar();
     addToolBar(Qt::TopToolBarArea, mainToolBar);
 
+    setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
+    timeDisplay = new QLabel();
+    timeDisplay->setContentsMargins(0, 0, 0, 0);
     statusBar = new QStatusBar();
+    statusBar->addPermanentWidget(timeDisplay);
     setStatusBar(statusBar);
 
     actionNew = new QAction("New", this);
@@ -546,6 +574,11 @@ void MainWindow::appendLog(QString logline)
 
 void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
 {
+    if (process!=nullptr) {
+        appendLog(QString("---TASK IN PROGRESS---\n"));
+        return;
+    }
+    taskTimer->restart();
     log->clear();
     QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
     effect->setColor(QColor(0, 0, 255, 127));
@@ -566,12 +599,17 @@ void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, Q
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { 
-        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---")); });
+        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---\n")); delete process; process = nullptr; });
     process->start();
 }
 
 void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
 {
+    if (process!=nullptr) {
+        appendLog(QString("---TASK IN PROGRESS---\n"));
+        return;
+    }
+    taskTimer->restart();
     log->clear();
     QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
     effect->setColor(QColor(0, 0, 255, 127));
@@ -594,7 +632,7 @@ void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAct
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---")); });
+        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---\n")); delete process; process = nullptr; });
     process->start();
 }
 

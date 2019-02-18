@@ -31,6 +31,8 @@
 #include <QProcess>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QLabel>
+#include <QTime>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -62,6 +64,7 @@ class MainWindow : public QMainWindow
     void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
     void refreshView();
     void appendLog(QString logline);
+    void showTime();
   protected Q_SLOTS:
     void closeTab(int index);
 
@@ -100,8 +103,10 @@ class MainWindow : public QMainWindow
     QAction *actionRedo;
     QProcess *process;
     QPlainTextEdit *log;
-
+    QLabel *timeDisplay;
     QString refreshLocation;
+
+    QTime *taskTimer;
 };
 
 #endif // MAINWINDOW_H
