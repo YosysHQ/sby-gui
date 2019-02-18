@@ -30,6 +30,7 @@
 #include <QGridLayout>
 #include <QProcess>
 #include <QPlainTextEdit>
+#include <QProgressBar>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -57,8 +58,8 @@ class MainWindow : public QMainWindow
     ScintillaEdit *openEditor();
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text);
-    void runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction);
-    void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction);
+    void runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
+    void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
     void refreshView();
   protected Q_SLOTS:
     void closeTab(int index);

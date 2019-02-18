@@ -31,6 +31,7 @@
 #include <QTextCursor>
 #include <QtXml>
 #include <QFile>
+#include <QGraphicsColorizeEffect>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 #include "sbyparser.h"
@@ -312,6 +313,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 
     bool sbyStatus = false;
     int status = 0;
+    long percentage = 0;
     if (parser.get_tasks().size() == 0) {
         boost::filesystem::path dir = path.parent_path().string();
         dir /= path.stem();
@@ -319,9 +321,11 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
             sbyStatus = true;
             if (boost::filesystem::exists(dir / "PASS")) {
                 status = 1;
+                percentage = 100;
             }
             if (boost::filesystem::exists(dir / "ERROR")) {
                 status = 2;
+                percentage = 100;
             }
             
             boost::filesystem::path xmlFile = dir / path.stem();
@@ -341,17 +345,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QHBoxLayout *hboxFile = new QHBoxLayout;
 
     QProgressBar *fileProgressBar = new QProgressBar();
-    fileProgressBar->setValue((status ==0) ? 0 : 100);
     QToolBar *toolBarFile = new QToolBar();    
-    QAction *statusIcon;
-    switch(status) {
-        default:
-        case 0 : statusIcon = new QAction(QIcon(":/icons/resources/question.png"),"Unknown", this);  break;
-        case 1 : statusIcon = new QAction(QIcon(":/icons/resources/check.png"),"PASS", this); break;
-        case 2 : statusIcon = new QAction(QIcon(":/icons/resources/close.png"),"ERROR", this); break;
-    }
-    toolBarFile->addAction(statusIcon);
-
     QAction *actionPlayFile = new QAction("Play", this);
     actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
     toolBarFile->addAction(actionPlayFile);
@@ -362,7 +356,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QAction *actionEditFile = new QAction("Edit", this);
     actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
 
-    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path, actionPlayFile, actionStopFile); });   
+    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path, actionPlayFile, actionStopFile, fileProgressBar); });   
     connect(actionStopFile, &QAction::triggered, [=]() { process->terminate(); });
     connect(actionEditFile, &QAction::triggered, [=]() { editOpen(path); });
     toolBarFile->addAction(actionEditFile);
@@ -373,7 +367,9 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     dummyFile->setLayout(hboxFile);
     vboxFile->addWidget(dummyFile);
 
-    QString styleTaskBox = "QGroupBox { border: 1px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
+    QString styleTaskBox = "QGroupBox { border: 1px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";    
+    int counter = 0;
+    int valid = 0;
     for (auto task : parser.get_tasks())
     {
         status = 0;
@@ -382,10 +378,10 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
             sbyStatus = true;
             if (boost::filesystem::exists(dir / "PASS")) {
-                status = 1;
+                status = 1; counter++; valid++;
             }
             if (boost::filesystem::exists(dir / "ERROR")) {
-                status = 2;
+                status = 2; counter++;
             }
         }
         QGroupBox *groupBox = new QGroupBox(task.c_str());
@@ -393,19 +389,18 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 
         QVBoxLayout *vbox = new QVBoxLayout;        
         QProgressBar *progressBar = new QProgressBar();
+        QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
+        switch(status) {
+            case 1 : effect->setColor(QColor(0, 255, 0, 127)); break;
+            case 2 : effect->setColor(QColor(255, 0, 0, 127)); break;
+            default : effect->setColor(QColor(255, 255, 0, 127)); break;
+        }
+        progressBar->setGraphicsEffect(effect);    
         progressBar->setValue((status ==0) ? 0 : 100);
 
         QHBoxLayout *hbox = new QHBoxLayout;
 
         QToolBar *toolBar = new QToolBar();
-        QAction *taskStatusIcon;
-        switch(status) {
-            default:
-            case 0 : taskStatusIcon = new QAction(QIcon(":/icons/resources/question.png"),"Unknown", this);  break;
-            case 1 : taskStatusIcon = new QAction(QIcon(":/icons/resources/check.png"),"PASS", this); break;
-            case 2 : taskStatusIcon = new QAction(QIcon(":/icons/resources/close.png"),"ERROR", this); break;
-        }
-        toolBar->addAction(taskStatusIcon);        
         QAction *actionPlay = new QAction("Play", this);
         actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
         toolBar->addAction(actionPlay);
@@ -415,7 +410,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         toolBar->addAction(actionStop);
         QAction *actionView = new QAction("View", this);
         actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
-        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task, actionPlay, actionStop); });  
+        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task, actionPlay, actionStop, progressBar); });  
         connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
         connect(actionView, &QAction::triggered, [=]() { previewOpen(path, task); });
         toolBar->addAction(actionView);
@@ -427,6 +422,32 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         vbox->addWidget(dummy);
         groupBox->setLayout(vbox);
         vboxFile->addWidget(groupBox);
+    }
+    if (parser.get_tasks().size() > 0) {
+        QGraphicsColorizeEffect *effectFile = new QGraphicsColorizeEffect;
+        percentage = counter * 100 / parser.get_tasks().size();
+        if (parser.get_tasks().size()==counter) {
+            if (valid==counter) 
+                effectFile->setColor(QColor(0, 255, 0, 127));
+            else if (valid == 0)
+                effectFile->setColor(QColor(255, 0, 0, 127));
+            else
+                effectFile->setColor(QColor(255, 127, 0, 127));
+            fileProgressBar->setValue(100);
+        } else {
+            effectFile->setColor(QColor(255, 255, 0, 127));
+            fileProgressBar->setValue(percentage);
+        }
+        fileProgressBar->setGraphicsEffect(effectFile);    
+    } else {
+        QGraphicsColorizeEffect *effectFile = new QGraphicsColorizeEffect;
+        switch(status) {
+            case 1 : effectFile->setColor(QColor(0, 255, 0, 127)); break;
+            case 2 : effectFile->setColor(QColor(255, 0, 0, 127)); break;
+            default : effectFile->setColor(QColor(255, 255, 0, 127)); break;
+        }
+        fileProgressBar->setGraphicsEffect(effectFile);    
+        fileProgressBar->setValue((status ==0) ? 0 : 100);
     }
     fileBox->setLayout(vboxFile);
     return fileBox;
@@ -518,9 +539,13 @@ void MainWindow::printOutput()
     log->moveCursor(QTextCursor::End);
 }
 
-void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction)
+void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
 {
     log->clear();
+    QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
+    effect->setColor(QColor(0, 0, 255, 127));
+    progressBar->setGraphicsEffect(effect);    
+    progressBar->setValue(50);    
     process = new QProcess;
     QStringList args;
     args << "-f";
@@ -540,9 +565,14 @@ void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, Q
     process->start();
 }
 
-void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction)
+void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
 {
     log->clear();
+    QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
+    effect->setColor(QColor(0, 0, 255, 127));
+    progressBar->setGraphicsEffect(effect);    
+    progressBar->setValue(50);    
+
     process = new QProcess;
     QStringList args;
     args << "-f";
