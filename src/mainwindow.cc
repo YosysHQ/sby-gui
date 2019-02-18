@@ -75,6 +75,7 @@ void MainWindow::removeLayoutItems(QLayout* layout)
 void MainWindow::openLocation(QString path)
 {
     std::vector<boost::filesystem::path> files;
+    refreshLocation = path;
     if(boost::filesystem::exists(path.toStdString())) {
         if (boost::filesystem::is_directory(path.toStdString())) {
             currentFolder = path;
@@ -213,6 +214,7 @@ void MainWindow::createMenusAndBars()
     menu_File->addAction(actionSaveAs);
     actionRefresh = new QAction("Refresh", this);
     actionRefresh->setIcon(QIcon(":/icons/resources/view-refresh.png"));
+    connect(actionRefresh, &QAction::triggered, [=]() { refreshView(); });
     menu_File->addAction(actionSaveAs);
     menu_File->addAction(new QAction("Save All", this));
     menu_File->addAction(new QAction("Rename...", this));
@@ -339,7 +341,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QHBoxLayout *hboxFile = new QHBoxLayout;
 
     QProgressBar *fileProgressBar = new QProgressBar();
-    fileProgressBar->setValue(100);
+    fileProgressBar->setValue((status ==0) ? 0 : 100);
     QToolBar *toolBarFile = new QToolBar();    
     QAction *statusIcon;
     switch(status) {
@@ -360,8 +362,8 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
     QAction *actionEditFile = new QAction("Edit", this);
     actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
 
-    connect(actionPlayFile, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(false); actionStopFile->setEnabled(true);*/ runSBYFile(path); });   
-    connect(actionStopFile, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(true); actionStopFile->setEnabled(false); */ process->terminate(); });
+    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path, actionPlayFile, actionStopFile); });   
+    connect(actionStopFile, &QAction::triggered, [=]() { process->terminate(); });
     connect(actionEditFile, &QAction::triggered, [=]() { editOpen(path); });
     toolBarFile->addAction(actionEditFile);
 
@@ -391,7 +393,7 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
 
         QVBoxLayout *vbox = new QVBoxLayout;        
         QProgressBar *progressBar = new QProgressBar();
-        progressBar->setValue(0);
+        progressBar->setValue((status ==0) ? 0 : 100);
 
         QHBoxLayout *hbox = new QHBoxLayout;
 
@@ -413,8 +415,8 @@ QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
         toolBar->addAction(actionStop);
         QAction *actionView = new QAction("View", this);
         actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
-        connect(actionPlay, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(false); actionStopFile->setEnabled(true);*/ runSBYTask(path, task); });  
-        connect(actionStop, &QAction::triggered, [=]() { /*actionPlayFile->setEnabled(true); actionStopFile->setEnabled(false);*/ process->terminate(); });
+        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task, actionPlay, actionStop); });  
+        connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
         connect(actionView, &QAction::triggered, [=]() { previewOpen(path, task); });
         toolBar->addAction(actionView);
 
@@ -516,7 +518,7 @@ void MainWindow::printOutput()
     log->moveCursor(QTextCursor::End);
 }
 
-void MainWindow::runSBYFile(boost::filesystem::path path)
+void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction)
 {
     log->clear();
     process = new QProcess;
@@ -532,12 +534,13 @@ void MainWindow::runSBYFile(boost::filesystem::path path)
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
-    connect(process, &QProcess::started, [=]() { printf("started\n"); });
-    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { printf("finished %d\n",exitCode); });
+    connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
+    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { 
+        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); });
     process->start();
 }
 
-void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
+void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction)
 {
     log->clear();
     process = new QProcess;
@@ -554,7 +557,13 @@ void MainWindow::runSBYTask(boost::filesystem::path path, std::string task)
     process->setWorkingDirectory(path.parent_path().string().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
-    connect(process, &QProcess::started, [=]() { printf("started\n"); });
-    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { printf("finished %d\n",exitCode); });
+    connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
+    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
+        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); });
     process->start();
+}
+
+void MainWindow::refreshView()
+{
+    openLocation(refreshLocation);
 }

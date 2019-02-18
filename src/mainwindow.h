@@ -57,8 +57,9 @@ class MainWindow : public QMainWindow
     ScintillaEdit *openEditor();
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text);
-    void runSBYFile(boost::filesystem::path path);
-    void runSBYTask(boost::filesystem::path path, std::string task);
+    void runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction);
+    void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction);
+    void refreshView();
   protected Q_SLOTS:
     void closeTab(int index);
 
@@ -97,6 +98,8 @@ class MainWindow : public QMainWindow
     QAction *actionRedo;
     QProcess *process;
     QPlainTextEdit *log;
+
+    QString refreshLocation;
 };
 
 #endif // MAINWINDOW_H
