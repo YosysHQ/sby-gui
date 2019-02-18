@@ -61,6 +61,7 @@ class MainWindow : public QMainWindow
     void runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
     void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
     void refreshView();
+    void appendLog(QString logline);
   protected Q_SLOTS:
     void closeTab(int index);
 

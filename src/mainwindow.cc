@@ -534,8 +534,13 @@ void MainWindow::editOpen(boost::filesystem::path path)
 void MainWindow::printOutput()
 {
     QString data = QString(process->readAllStandardOutput());
+    appendLog(data);
+}
+
+void MainWindow::appendLog(QString logline)
+{
     log->moveCursor(QTextCursor::End);
-    log->insertPlainText (data);
+    log->insertPlainText (logline);
     log->moveCursor(QTextCursor::End);
 }
 
@@ -561,7 +566,7 @@ void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, Q
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { 
-        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); });
+        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---")); });
     process->start();
 }
 
@@ -589,7 +594,7 @@ void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAct
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); });
+        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---")); });
     process->start();
 }
 
