@@ -435,4 +435,5 @@ void MainWindow::appendLog(QString logline)
 void MainWindow::refreshView()
 {
     openLocation(refreshLocation);
+    appendLog("All processes killed\n");
 }

@@ -3,7 +3,7 @@
 #include <QToolBar>
 #include <QGraphicsColorizeEffect>
 
-QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGroupBox(title, parent), item(item), process(nullptr)
+QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGroupBox(title, parent), item(item), process(nullptr), shutdown(false)
 {
     if (item->isTop()) {
         QString style = "QGroupBox { border: 3px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
@@ -49,6 +49,15 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     vbox->addWidget(dummyItem);
 }
 
+QSBYItem::~QSBYItem()
+{
+    if (process) {
+        shutdown = true;
+        process->terminate();        
+        process->waitForFinished();
+        process->close();
+    }
+}
 void QSBYItem::printOutput()
 {
     QString data = QString(process->readAllStandardOutput());
@@ -100,6 +109,7 @@ void QSBYItem::runSBYTask()
         actionStop->setEnabled(true); 
     });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
+        if (shutdown) return
         actionPlay->setEnabled(true); 
         actionStop->setEnabled(false); 
         item->update();

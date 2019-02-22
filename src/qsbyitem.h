@@ -14,6 +14,7 @@ class QSBYItem : public QGroupBox
 
   public:
     QSBYItem(const QString & title, SBYItem *item, QWidget *parent = 0);
+    virtual ~QSBYItem();
     void runSBYTask();
     void refreshView();
   protected Q_SLOTS:
@@ -30,6 +31,7 @@ class QSBYItem : public QGroupBox
 
     SBYItem *item;
     QProcess *process;
+    bool shutdown;
 };
 
 #endif // QSBYITEM_H
