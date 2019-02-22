@@ -33,6 +33,7 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTime>
+#include "qsbyitem.h"
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -51,17 +52,15 @@ class MainWindow : public QMainWindow
 
   protected:
     void createMenusAndBars();
-    QGroupBox *generateFileBox(boost::filesystem::path path);
+    QGroupBox *generateFileBox(SBYFile *file);
 
     void openLocation(QString path);
     void removeLayoutItems(QLayout* layout);
-    void previewOpen(boost::filesystem::path path, std::string task);
-    void editOpen(boost::filesystem::path path);
+    void editOpen(std::string path, std::string fileName);
+    void previewOpen(std::string content, std::string fileName, std::string taskName);
     ScintillaEdit *openEditor();
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text);
-    void runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
-    void runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar);
     void refreshView();
     void appendLog(QString logline);
     void showTime();
@@ -70,12 +69,6 @@ class MainWindow : public QMainWindow
 
     void open_sby();
     void open_folder();
-    void printOutput();
-  Q_SIGNALS:
-    void updateTreeView();
-    void executePython(QString content);
-    void runPythonScript(QString content);
-
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
@@ -107,6 +100,8 @@ class MainWindow : public QMainWindow
     QString refreshLocation;
 
     QTime *taskTimer;
+
+    std::vector<std::unique_ptr<SBYFile>> files;
 };
 
 #endif // MAINWINDOW_H

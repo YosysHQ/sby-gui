@@ -34,7 +34,6 @@
 #include <QGraphicsColorizeEffect>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
-#include "sbyparser.h"
 #include <fstream>
 
 std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, const std::string &extension){
@@ -75,23 +74,34 @@ void MainWindow::removeLayoutItems(QLayout* layout)
 
 void MainWindow::openLocation(QString path)
 {
-    std::vector<boost::filesystem::path> files;
+    std::vector<boost::filesystem::path> fileList;
     refreshLocation = path;
     if(boost::filesystem::exists(path.toStdString())) {
         if (boost::filesystem::is_directory(path.toStdString())) {
             currentFolder = path;
-            files = getFilesInDir(currentFolder.toStdString().c_str(), ".sby");
+            fileList = getFilesInDir(currentFolder.toStdString().c_str(), ".sby");
         } else {
             boost::filesystem::path filepath(path.toStdString());
             currentFolder = filepath.parent_path().string().c_str();
-            files.push_back(filepath);
+            fileList.push_back(filepath);
         }
     } 
     removeLayoutItems(grid);
+    files.clear();
+
     // create new widgets
     int cnt = 0;
-    for(auto file : files) {
-        grid->addWidget(generateFileBox(file), cnt++, 0);
+    for (auto file : fileList)
+    {
+        std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(file);
+        f->parse();
+        f->update();
+        files.push_back(std::move(f));
+    }
+
+    for(const auto & file : files) {
+        
+        grid->addWidget(generateFileBox(file.get()), cnt++, 0);
     }
 
 }
@@ -324,160 +334,22 @@ void MainWindow::open_folder()
         openLocation(folderName);
     }
 }
-QGroupBox *MainWindow::generateFileBox(boost::filesystem::path path)
+
+QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 {
-    QGroupBox *fileBox = new QGroupBox(path.filename().c_str());
-
-    QString styleFileBox = "QGroupBox { border: 3px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
-    fileBox->setStyleSheet(styleFileBox);     
-    fileBox->setMinimumWidth(370);
-    fileBox->setMaximumWidth(370);
-
-    SBYParser parser;
-    std::fstream fs;
-    fs.open(path.string().c_str(), std::fstream::in);
-    parser.parse(fs);
-    fs.close();
-
-    bool sbyStatus = false;
-    int status = 0;
-    long percentage = 0;
-    if (parser.get_tasks().size() == 0) {
-        boost::filesystem::path dir = path.parent_path().string();
-        dir /= path.stem();
-        if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-            sbyStatus = true;
-            if (boost::filesystem::exists(dir / "PASS")) {
-                status = 1;
-                percentage = 100;
-            }
-            if (boost::filesystem::exists(dir / "ERROR")) {
-                status = 2;
-                percentage = 100;
-            }
-            
-            boost::filesystem::path xmlFile = dir / path.stem();
-            xmlFile.replace_extension("xml");
-            if (boost::filesystem::exists(xmlFile)) {
-                QDomDocument xml;
-                QFile f(xmlFile.string().c_str());
-                f.open(QIODevice::ReadOnly);
-                xml.setContent(&f);
-                f.close();
-            }
-        }        
-    }
-    
-    QVBoxLayout *vboxFile = new QVBoxLayout;
-
-    QHBoxLayout *hboxFile = new QHBoxLayout;
-
-    QProgressBar *fileProgressBar = new QProgressBar();
-    QToolBar *toolBarFile = new QToolBar();    
-    QAction *actionPlayFile = new QAction("Play", this);
-    actionPlayFile->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
-    toolBarFile->addAction(actionPlayFile);
-    QAction *actionStopFile = new QAction("Stop", this);
-    actionStopFile->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
-    actionStopFile->setEnabled(false);
-    toolBarFile->addAction(actionStopFile);
-    QAction *actionEditFile = new QAction("Edit", this);
-    actionEditFile->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
-
-    connect(actionPlayFile, &QAction::triggered, [=]() { runSBYFile(path, actionPlayFile, actionStopFile, fileProgressBar); });   
-    connect(actionStopFile, &QAction::triggered, [=]() { process->terminate(); });
-    connect(actionEditFile, &QAction::triggered, [=]() { editOpen(path); });
-    toolBarFile->addAction(actionEditFile);
-
-    hboxFile->addWidget(fileProgressBar);
-    hboxFile->addWidget(toolBarFile);
-    QWidget *dummyFile = new QWidget();
-    dummyFile->setLayout(hboxFile);
-    vboxFile->addWidget(dummyFile);
-
-    QString styleTaskBox = "QGroupBox { border: 1px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";    
-    int counter = 0;
-    int valid = 0;
-    for (auto task : parser.get_tasks())
+    QSBYItem *fileBox = new QSBYItem(file->getName().c_str(), file, this);  
+    connect(fileBox, &QSBYItem::appendLog, this, &MainWindow::appendLog);
+    connect(fileBox, &QSBYItem::editOpen, this, &MainWindow::editOpen);
+    connect(fileBox, &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+  
+    for (auto const & task : file->getTasks())
     {
-        status = 0;
-        boost::filesystem::path dir = path.parent_path().string();
-        dir /= (path.stem().string() + "_" + task);
-        if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-            sbyStatus = true;
-            if (boost::filesystem::exists(dir / "PASS")) {
-                status = 1; counter++; valid++;
-            }
-            if (boost::filesystem::exists(dir / "ERROR")) {
-                status = 2; counter++;
-            }
-        }
-        QGroupBox *groupBox = new QGroupBox(task.c_str());
-        groupBox->setStyleSheet(styleTaskBox);     
-
-        QVBoxLayout *vbox = new QVBoxLayout;        
-        QProgressBar *progressBar = new QProgressBar();
-        QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
-        switch(status) {
-            case 1 : effect->setColor(QColor(0, 255, 0, 127)); break;
-            case 2 : effect->setColor(QColor(255, 0, 0, 127)); break;
-            default : effect->setColor(QColor(255, 255, 0, 127)); break;
-        }
-        progressBar->setGraphicsEffect(effect);    
-        progressBar->setValue((status ==0) ? 0 : 100);
-
-        QHBoxLayout *hbox = new QHBoxLayout;
-
-        QToolBar *toolBar = new QToolBar();
-        QAction *actionPlay = new QAction("Play", this);
-        actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));    
-        toolBar->addAction(actionPlay);
-        QAction *actionStop = new QAction("Stop", this);
-        actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
-        actionStop->setEnabled(false);
-        toolBar->addAction(actionStop);
-        QAction *actionView = new QAction("View", this);
-        actionView->setIcon(QIcon(":/icons/resources/text-x-generic.png"));
-        connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(path, task, actionPlay, actionStop, progressBar); });  
-        connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
-        connect(actionView, &QAction::triggered, [=]() { previewOpen(path, task); });
-        toolBar->addAction(actionView);
-
-        hbox->addWidget(progressBar);
-        hbox->addWidget(toolBar);
-        QWidget *dummy = new QWidget();
-        dummy->setLayout(hbox);
-        vbox->addWidget(dummy);
-        groupBox->setLayout(vbox);
-        vboxFile->addWidget(groupBox);
+        QSBYItem *groupBox = new QSBYItem(task->getName().c_str(), task.get(), this);       
+        connect(groupBox, &QSBYItem::appendLog, this, &MainWindow::appendLog);
+        connect(groupBox, &QSBYItem::editOpen, this, &MainWindow::editOpen);
+        connect(groupBox, &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+        fileBox->layout()->addWidget(groupBox);
     }
-    if (parser.get_tasks().size() > 0) {
-        QGraphicsColorizeEffect *effectFile = new QGraphicsColorizeEffect;
-        percentage = counter * 100 / parser.get_tasks().size();
-        if (parser.get_tasks().size()==counter) {
-            if (valid==counter) 
-                effectFile->setColor(QColor(0, 255, 0, 127));
-            else if (valid == 0)
-                effectFile->setColor(QColor(255, 0, 0, 127));
-            else
-                effectFile->setColor(QColor(255, 127, 0, 127));
-            fileProgressBar->setValue(100);
-        } else {
-            effectFile->setColor(QColor(255, 255, 0, 127));
-            fileProgressBar->setValue(percentage);
-        }
-        fileProgressBar->setGraphicsEffect(effectFile);    
-    } else {
-        QGraphicsColorizeEffect *effectFile = new QGraphicsColorizeEffect;
-        switch(status) {
-            case 1 : effectFile->setColor(QColor(0, 255, 0, 127)); break;
-            case 2 : effectFile->setColor(QColor(255, 0, 0, 127)); break;
-            default : effectFile->setColor(QColor(255, 255, 0, 127)); break;
-        }
-        fileProgressBar->setGraphicsEffect(effectFile);    
-        fileProgressBar->setValue((status ==0) ? 0 : 100);
-    }
-    fileBox->setLayout(vboxFile);
     return fileBox;
 }
 
@@ -511,9 +383,9 @@ ScintillaEdit *MainWindow::openEditorText(std::string text)
     return editor;
 }
 
-void MainWindow::previewOpen(boost::filesystem::path path, std::string task)
+void MainWindow::previewOpen(std::string content, std::string fileName, std::string taskName)
 {
-    std::string name = path.filename().string() + "#" + task;
+    std::string name = fileName + "#" + taskName;
  
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
@@ -521,30 +393,24 @@ void MainWindow::previewOpen(boost::filesystem::path path, std::string task)
             return; 
         } 
     }
-    
-    SBYParser parser;
-    std::fstream fs;
-    fs.open(path.string().c_str(), std::fstream::in);
-    parser.parse(fs);
-    fs.close();
 
-    ScintillaEdit *editor = openEditorText(parser.get_config_content(task));
+    ScintillaEdit *editor = openEditorText(content);
     editor->setReadOnly(true);
 
     centralTabWidget->addTab(editor, name.c_str());
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::editOpen(boost::filesystem::path path)
+void MainWindow::editOpen(std::string path, std::string fileName)
 {
-    std::string name = path.filename().string();
+    std::string name = fileName;
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
             centralTabWidget->setCurrentIndex(i); 
             return; 
         } 
     }
-    ScintillaEdit *editor = openEditorFile(path.string());
+    ScintillaEdit *editor = openEditorFile(path);
     connect(editor, &ScintillaEdit::modified, [=]() { 
         for(int i=0;i<centralTabWidget->count();i++) {
             if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
@@ -559,81 +425,11 @@ void MainWindow::editOpen(boost::filesystem::path path)
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::printOutput()
-{
-    QString data = QString(process->readAllStandardOutput());
-    appendLog(data);
-}
-
 void MainWindow::appendLog(QString logline)
 {
     log->moveCursor(QTextCursor::End);
     log->insertPlainText (logline);
     log->moveCursor(QTextCursor::End);
-}
-
-void MainWindow::runSBYFile(boost::filesystem::path path, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
-{
-    if (process!=nullptr) {
-        appendLog(QString("---TASK IN PROGRESS---\n"));
-        return;
-    }
-    taskTimer->restart();
-    log->clear();
-    QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
-    effect->setColor(QColor(0, 0, 255, 127));
-    progressBar->setGraphicsEffect(effect);    
-    progressBar->setValue(50);    
-    process = new QProcess;
-    QStringList args;
-    args << "-f";
-    args << path.filename().string().c_str();
-    process->setProgram("sby");
-    process->setArguments(args);
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("YOSYS_NOVERIFIC","1");
-    env.insert("PYTHONUNBUFFERED","1");
-    process->setProcessEnvironment(env);
-    process->setWorkingDirectory(path.parent_path().string().c_str());
-    process->setProcessChannelMode(QProcess::MergedChannels);  
-    connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
-    connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
-    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) { 
-        playAction->setEnabled(true); stopAction->setEnabled(false);refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---\n")); delete process; process = nullptr; });
-    process->start();
-}
-
-void MainWindow::runSBYTask(boost::filesystem::path path, std::string task, QAction* playAction, QAction* stopAction, QProgressBar *progressBar)
-{
-    if (process!=nullptr) {
-        appendLog(QString("---TASK IN PROGRESS---\n"));
-        return;
-    }
-    taskTimer->restart();
-    log->clear();
-    QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
-    effect->setColor(QColor(0, 0, 255, 127));
-    progressBar->setGraphicsEffect(effect);    
-    progressBar->setValue(50);    
-
-    process = new QProcess;
-    QStringList args;
-    args << "-f";
-    args << path.filename().string().c_str();
-    args << task.c_str();
-    process->setProgram("sby");
-    process->setArguments(args);
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("YOSYS_NOVERIFIC","1");
-    env.insert("PYTHONUNBUFFERED","1");
-    process->setProcessEnvironment(env);
-    process->setWorkingDirectory(path.parent_path().string().c_str());
-    process->setProcessChannelMode(QProcess::MergedChannels);  
-    connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
-    connect(process, &QProcess::started, [=]() { playAction->setEnabled(false); stopAction->setEnabled(true); });
-    connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        playAction->setEnabled(true); stopAction->setEnabled(false); refreshView(); if (exitCode!=0) appendLog(QString("---TASK STOPPED---\n")); delete process; process = nullptr; });
-    process->start();
 }
 
 void MainWindow::refreshView()
