@@ -35,7 +35,19 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     actionEdit->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
     toolBarFile->addAction(actionEdit);
     
-    connect(actionPlay, &QAction::triggered, [=]() { Q_EMIT startTask(getName()); });   
+    connect(actionPlay, &QAction::triggered, [=]() { 
+        if (item->isTop()) {
+         SBYFile* file = static_cast<SBYFile*>(item);
+         if (file->haveTasks())  {
+            for(const auto & task : file->getTasks())
+                Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName()); 
+         } else {
+            Q_EMIT startTask(getName()); 
+         }
+        } else {
+            Q_EMIT startTask(getName()); 
+        }
+    });   
     connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
     if (item->isTop()) {    
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT editOpen(item->getFullPath(), item->getFileName()); });  

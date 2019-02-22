@@ -90,6 +90,7 @@ void MainWindow::openLocation(QString path)
     items.clear();
     removeLayoutItems(grid);
     files.clear();
+    taskList = decltype(taskList){};
 
     // create new widgets
     int cnt = 0;
@@ -337,10 +338,10 @@ void MainWindow::open_folder()
 }
 
 void MainWindow::taskExecuted()
-{        
+{   
     taskList.pop();
     if (taskList.size()>0)  {        
-        std::string name = taskList.front();
+        std::string name = taskList.front();        
         items[name]->runSBYTask();
     }
 }
