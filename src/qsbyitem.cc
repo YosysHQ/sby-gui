@@ -15,9 +15,9 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
         setStyleSheet(style);     
     }
 
-    vboxFile = new QVBoxLayout(this);
-    QWidget *dummyFile = new QWidget();
-    QHBoxLayout *hboxFile = new QHBoxLayout(dummyFile);
+    QVBoxLayout *vbox = new QVBoxLayout(this);
+    QWidget *dummyItem = new QWidget(this);
+    QHBoxLayout *hbox = new QHBoxLayout(dummyItem);
 
     progressBar = new QProgressBar(this);
     refreshView();
@@ -43,10 +43,10 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName()); });
     }
 
-    hboxFile->addWidget(progressBar);
-    hboxFile->addWidget(toolBarFile);
+    hbox->addWidget(progressBar);
+    hbox->addWidget(toolBarFile);
 
-    vboxFile->addWidget(dummyFile);
+    vbox->addWidget(dummyItem);
 }
 
 void QSBYItem::printOutput()
@@ -83,7 +83,9 @@ void QSBYItem::runSBYTask()
     QStringList args;
     args << "-f";
     args << item->getFileName().c_str();
-    args << item->getTaskName().c_str();
+    if (!item->isTop()) { 
+        args << item->getTaskName().c_str();
+    }
     process->setProgram("sby");
     process->setArguments(args);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();

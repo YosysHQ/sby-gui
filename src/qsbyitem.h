@@ -22,8 +22,7 @@ class QSBYItem : public QGroupBox
     void appendLog(QString content);
     void editOpen(std::string path, std::string fileName);
     void previewOpen(std::string content, std::string fileName, std::string taskName);
-  protected:
-    QVBoxLayout *vboxFile;
+  protected:    
     QProgressBar *progressBar;
     QAction *actionPlay;
     QAction *actionStop;
