@@ -98,6 +98,9 @@ class MainWindow : public QMainWindow
     QAction *actionPaste;
     QAction *actionUndo;
     QAction *actionRedo;
+    QAction *actionPlay;
+    QAction *actionStop;
+
     QProcess *process;
     QPlainTextEdit *log;
     QLabel *timeDisplay;

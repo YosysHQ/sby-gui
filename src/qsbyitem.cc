@@ -22,18 +22,18 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     progressBar = new QProgressBar(this);
     refreshView();
 
-    QToolBar *toolBarFile = new QToolBar(this);    
+    QToolBar *toolBar = new QToolBar(this);    
     
     actionPlay = new QAction("Play", this);
     actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
-    toolBarFile->addAction(actionPlay);
+    toolBar->addAction(actionPlay);
     actionStop = new QAction("Stop", this);
     actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
     actionStop->setEnabled(false);
-    toolBarFile->addAction(actionStop);
+    toolBar->addAction(actionStop);
     actionEdit = new QAction("Edit", this);
     actionEdit->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
-    toolBarFile->addAction(actionEdit);
+    toolBar->addAction(actionEdit);
     
     connect(actionPlay, &QAction::triggered, [=]() { 
         if (item->isTop()) {
@@ -56,7 +56,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     }
 
     hbox->addWidget(progressBar);
-    hbox->addWidget(toolBarFile);
+    hbox->addWidget(toolBar);
 
     vbox->addWidget(dummyItem);
 }
@@ -132,6 +132,12 @@ void QSBYItem::runSBYTask()
         Q_EMIT taskExecuted();
     });
     process->start();
+}
+
+void QSBYItem::stopProcess()
+{
+    if (process)
+        process->terminate();
 }
 
 std::string QSBYItem::getName()

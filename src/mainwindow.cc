@@ -313,6 +313,33 @@ void MainWindow::createMenusAndBars()
     mainToolBar->addAction(actionOpenFolder);
     mainToolBar->addAction(actionSave);
     mainToolBar->addAction(actionRefresh);
+
+    actionPlay = new QAction("Play", this);
+    actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
+    mainToolBar->addAction(actionPlay);
+    actionStop = new QAction("Stop", this);
+    actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+    actionStop->setEnabled(false);
+    mainToolBar->addAction(actionStop);
+    connect(actionPlay, &QAction::triggered, [=]() { 
+        for (auto & item : files)
+        {
+            if (item->haveTasks())  {
+                for(const auto & task : item->getTasks())
+                    Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName()); 
+            } else {
+                Q_EMIT startTask(item->getFileName() ); 
+            }
+        }
+    });   
+    connect(actionStop, &QAction::triggered, [=]() { 
+        if (taskList.size()>0)  {        
+            std::string name = taskList.front();        
+            taskList = decltype(taskList){};
+            taskList.push(name); // Put back one to finish
+            items[name]->stopProcess();
+        }         
+     });
 }
 
 void MainWindow::open_sby()
@@ -343,11 +370,16 @@ void MainWindow::taskExecuted()
     if (taskList.size()>0)  {        
         std::string name = taskList.front();        
         items[name]->runSBYTask();
+    } else {
+        actionPlay->setEnabled(true); 
+        actionStop->setEnabled(false); 
     }
 }
 
 void MainWindow::startTask(std::string name)
-{    
+{   
+    actionPlay->setEnabled(false); 
+    actionStop->setEnabled(true);
     taskList.push(name);
     if (taskList.size()==1)         
     {

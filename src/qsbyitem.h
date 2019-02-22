@@ -18,6 +18,7 @@ class QSBYItem : public QGroupBox
     void runSBYTask();
     void refreshView();
     std::string getName();
+    void stopProcess();
   protected Q_SLOTS:
     void printOutput();
   Q_SIGNALS:
