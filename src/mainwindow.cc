@@ -86,6 +86,8 @@ void MainWindow::openLocation(QString path)
             fileList.push_back(filepath);
         }
     } 
+
+    items.clear();
     removeLayoutItems(grid);
     files.clear();
 
@@ -103,7 +105,6 @@ void MainWindow::openLocation(QString path)
         
         grid->addWidget(generateFileBox(file.get()), cnt++, 0);
     }
-
 }
 MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
@@ -335,22 +336,47 @@ void MainWindow::open_folder()
     }
 }
 
+void MainWindow::taskExecuted()
+{        
+    taskList.pop();
+    if (taskList.size()>0)  {        
+        std::string name = taskList.front();
+        items[name]->runSBYTask();
+    }
+}
+
+void MainWindow::startTask(std::string name)
+{    
+    taskList.push(name);
+    if (taskList.size()==1)         
+    {
+        items[name]->runSBYTask();
+    }
+}
+
 QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 {
-    QSBYItem *fileBox = new QSBYItem(file->getName().c_str(), file, this);  
-    connect(fileBox, &QSBYItem::appendLog, this, &MainWindow::appendLog);
-    connect(fileBox, &QSBYItem::editOpen, this, &MainWindow::editOpen);
-    connect(fileBox, &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+    std::unique_ptr<QSBYItem> fileBox = std::make_unique<QSBYItem>(file->getName().c_str(), file, this);
+    connect(fileBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
+    connect(fileBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
+    connect(fileBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+    connect(fileBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
+    connect(fileBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
   
     for (auto const & task : file->getTasks())
     {
-        QSBYItem *groupBox = new QSBYItem(task->getName().c_str(), task.get(), this);       
-        connect(groupBox, &QSBYItem::appendLog, this, &MainWindow::appendLog);
-        connect(groupBox, &QSBYItem::editOpen, this, &MainWindow::editOpen);
-        connect(groupBox, &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
-        fileBox->layout()->addWidget(groupBox);
+        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName().c_str(), task.get(), this);
+        std::string name = groupBox->getName();
+        connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
+        connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
+        connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+        connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
+        connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
+        fileBox->layout()->addWidget(groupBox.get());
+        items.emplace(std::make_pair(name, std::move(groupBox)));
     }
-    return fileBox;
+    items.emplace(std::make_pair(file->getName(), std::move(fileBox)));
+    return items[file->getName()].get();
 }
 
 ScintillaEdit *MainWindow::openEditor()

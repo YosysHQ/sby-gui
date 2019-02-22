@@ -35,7 +35,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     actionEdit->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
     toolBarFile->addAction(actionEdit);
     
-    connect(actionPlay, &QAction::triggered, [=]() { runSBYTask(); });   
+    connect(actionPlay, &QAction::triggered, [=]() { Q_EMIT startTask(getName()); });   
     connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
     if (item->isTop()) {    
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT editOpen(item->getFullPath(), item->getFileName()); });  
@@ -109,7 +109,7 @@ void QSBYItem::runSBYTask()
         actionStop->setEnabled(true); 
     });
     connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (shutdown) return
+        if (shutdown) return;
         actionPlay->setEnabled(true); 
         actionStop->setEnabled(false); 
         item->update();
@@ -117,6 +117,15 @@ void QSBYItem::runSBYTask()
         if (exitCode!=0) Q_EMIT appendLog(QString("---TASK STOPPED---\n")); 
         delete process; 
         process = nullptr; 
+        Q_EMIT taskExecuted();
     });
     process->start();
+}
+
+std::string QSBYItem::getName()
+{
+    if (item->isTop())
+        return item->getFileName();
+    else 
+        return item->getFileName() + "#" + item->getName();
 }

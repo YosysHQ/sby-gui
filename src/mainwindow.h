@@ -33,6 +33,8 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTime>
+#include <map>
+#include <queue>
 #include "qsbyitem.h"
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
@@ -66,6 +68,8 @@ class MainWindow : public QMainWindow
     void showTime();
   protected Q_SLOTS:
     void closeTab(int index);
+    void taskExecuted();
+    void startTask(std::string name);
 
     void open_sby();
     void open_folder();
@@ -102,6 +106,8 @@ class MainWindow : public QMainWindow
     QTime *taskTimer;
 
     std::vector<std::unique_ptr<SBYFile>> files;
+    std::map<std::string, std::unique_ptr<QSBYItem>> items;
+    std::queue<std::string> taskList;
 };
 
 #endif // MAINWINDOW_H

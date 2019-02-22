@@ -17,10 +17,13 @@ class QSBYItem : public QGroupBox
     virtual ~QSBYItem();
     void runSBYTask();
     void refreshView();
+    std::string getName();
   protected Q_SLOTS:
     void printOutput();
   Q_SIGNALS:
     void appendLog(QString content);
+    void taskExecuted();
+    void startTask(std::string name);
     void editOpen(std::string path, std::string fileName);
     void previewOpen(std::string content, std::string fileName, std::string taskName);
   protected:    
