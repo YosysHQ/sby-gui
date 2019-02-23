@@ -89,12 +89,6 @@ void QSBYItem::refreshView()
 }
 void QSBYItem::runSBYTask()
 {
-    if (process!=nullptr) {
-        Q_EMIT appendLog(QString("---TASK IN PROGRESS---\n"));
-        return;
-    }
-    //taskTimer->restart();
-    //log->clear();
     QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect;
     effect->setColor(QColor(0, 0, 255, 127));
     progressBar->setGraphicsEffect(effect);    
@@ -116,6 +110,18 @@ void QSBYItem::runSBYTask()
     process->setWorkingDirectory(item->getWorkFolder().c_str());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
+    connect(process, &QProcess::stateChanged, [=](QProcess::ProcessState newState) { 
+        if (newState == QProcess::NotRunning && state == QProcess::Starting) {
+            Q_EMIT appendLog(QString("Unable to start SBY\n")); 
+            actionPlay->setEnabled(true); 
+            actionStop->setEnabled(false); 
+            item->update();
+            refreshView(); 
+            Q_EMIT taskExecuted();
+        }
+        state = newState;
+    });
+
     connect(process, &QProcess::started, [=]() { 
         actionPlay->setEnabled(false); 
         actionStop->setEnabled(true); 

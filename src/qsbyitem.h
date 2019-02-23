@@ -36,6 +36,7 @@ class QSBYItem : public QGroupBox
     SBYItem *item;
     QProcess *process;
     bool shutdown;
+    QProcess::ProcessState state;
 };
 
 #endif // QSBYITEM_H
