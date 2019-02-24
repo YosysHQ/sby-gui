@@ -90,7 +90,7 @@ void MainWindow::openLocation(QString path)
     items.clear();
     removeLayoutItems(grid);
     files.clear();
-    taskList = decltype(taskList){};
+    taskList.clear();
 
     // create new widgets
     int cnt = 0;
@@ -335,8 +335,8 @@ void MainWindow::createMenusAndBars()
     connect(actionStop, &QAction::triggered, [=]() { 
         if (taskList.size()>0)  {        
             std::string name = taskList.front();        
-            taskList = decltype(taskList){};
-            taskList.push(name); // Put back one to finish
+            taskList.clear();
+            taskList.push_back(name); // Put back one to finish
             items[name]->stopProcess();
         }         
      });
@@ -366,7 +366,7 @@ void MainWindow::open_folder()
 
 void MainWindow::taskExecuted()
 {   
-    taskList.pop();
+    taskList.pop_front();
     if (taskList.size()>0)  {        
         std::string name = taskList.front();        
         items[name]->runSBYTask();
@@ -380,10 +380,13 @@ void MainWindow::startTask(std::string name)
 {   
     actionPlay->setEnabled(false); 
     actionStop->setEnabled(true);
-    taskList.push(name);
-    if (taskList.size()==1)         
+    if (std::find(taskList.begin(),taskList.end(),name) == taskList.end()) 
     {
-        items[name]->runSBYTask();
+        taskList.push_back(name);
+        if (taskList.size()==1)         
+        {
+            items[name]->runSBYTask();
+        }
     }
 }
 

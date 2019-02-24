@@ -34,7 +34,7 @@
 #include <QLabel>
 #include <QTime>
 #include <map>
-#include <queue>
+#include <deque>
 #include "qsbyitem.h"
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
@@ -110,7 +110,7 @@ class MainWindow : public QMainWindow
 
     std::vector<std::unique_ptr<SBYFile>> files;
     std::map<std::string, std::unique_ptr<QSBYItem>> items;
-    std::queue<std::string> taskList;
+    std::deque<std::string> taskList;
 };
 
 #endif // MAINWINDOW_H
