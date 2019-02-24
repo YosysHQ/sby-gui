@@ -104,7 +104,7 @@ void QSBYItem::runSBYTask()
     process->setProgram("sby");
     process->setArguments(args);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("YOSYS_NOVERIFIC","1");
+    //env.insert("YOSYS_NOVERIFIC","1");
     env.insert("PYTHONUNBUFFERED","1");
     process->setProcessEnvironment(env);
     process->setWorkingDirectory(item->getWorkFolder().c_str());
