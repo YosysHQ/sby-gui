@@ -1,9 +1,39 @@
 #include "sbyitem.h"
+#include <boost/lexical_cast.hpp>
 #include <fstream>
+#include <QDomDocument>
+#include <QFile>
 
-SBYItem::SBYItem(boost::filesystem::path path, std::string name) : path(path), name(name)
+SBYItem::SBYItem(boost::filesystem::path path, std::string name) : path(path), name(name), timeSpent(boost::none), previousLog(boost::none)
 {
 
+}
+
+void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
+{
+    xmlFile.replace_extension("xml");
+    timeSpent = boost::none;
+    previousLog = boost::none;
+    if (boost::filesystem::exists(xmlFile)) {
+        QDomDocument xml;
+        QFile f(xmlFile.string().c_str());
+        f.open(QIODevice::ReadOnly);
+        xml.setContent(&f);
+        f.close();
+        QDomNodeList testcaseList = xml.elementsByTagName("testcase");
+        if (!testcaseList.isEmpty()) {
+            QDomElement testcase = testcaseList.at(0).toElement();
+            if (testcase.hasAttribute("time"))
+            {
+                timeSpent = boost::lexical_cast<int>(testcase.attribute("time").toStdString());
+            }
+        }
+        QDomNodeList systemOutList = xml.elementsByTagName("system-out");
+        if (!systemOutList.isEmpty()) {
+            QDomElement systemOut = systemOutList.at(0).toElement();
+            previousLog = systemOut.text().toStdString();
+        }
+    } 
 }
 
 SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content) : SBYItem(path, name), content(content)
@@ -11,7 +41,7 @@ SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string con
 }
 
 void SBYTask::update()
-{
+{    
     status = 0;
     percentage = 0;
     boost::filesystem::path dir = path.parent_path().string();
@@ -25,6 +55,7 @@ void SBYTask::update()
             status = 2; 
             percentage = 100;
         }
+        updateFromXML(dir / (path.stem().string() + "_" + name));
     }
 }
 
@@ -65,16 +96,7 @@ void SBYFile::update()
                 status = 2;
                 percentage = 100;
             }
-/*            
-            boost::filesystem::path xmlFile = dir / path.stem();
-            xmlFile.replace_extension("xml");
-            if (boost::filesystem::exists(xmlFile)) {
-                QDomDocument xml;
-                QFile f(xmlFile.string().c_str());
-                f.open(QIODevice::ReadOnly);
-                xml.setContent(&f);
-                f.close();
-            }*/
+            //updateFromXML(dir / path.stem());
         }        
     }
     else // have tasks

@@ -4,6 +4,7 @@
 #include <string>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 #include "sbyparser.h"
 
 class SBYItem {
@@ -16,7 +17,10 @@ public:
     std::string getWorkFolder() { return path.parent_path().string(); }    
     int getStatus() { return status; }
     int getPercentage() { return percentage; }
+    boost::optional<int> getTimeSpent() { return timeSpent; }
+    boost::optional<std::string> getPreviousLog() { return previousLog; }
 
+    void updateFromXML(boost::filesystem::path path);
     virtual void update() = 0;
     virtual bool isTop() = 0;
     virtual std::string getTaskName() = 0;
@@ -26,6 +30,8 @@ protected:
     boost::filesystem::path path;
     int status;
     int percentage;
+    boost::optional<int> timeSpent;
+    boost::optional<std::string> previousLog;
 };
 
 class SBYTask : public SBYItem {
