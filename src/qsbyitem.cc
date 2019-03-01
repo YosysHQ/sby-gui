@@ -20,7 +20,6 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     QHBoxLayout *hbox = new QHBoxLayout(dummyItem);
 
     progressBar = new QProgressBar(this);
-    refreshView();
 
     QToolBar *toolBar = new QToolBar(this);    
     
@@ -31,10 +30,28 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
     actionStop->setEnabled(false);
     toolBar->addAction(actionStop);
-    actionEdit = new QAction("Edit", this);
-    actionEdit->setIcon(QIcon(":/icons/resources/text-x-generic.png"));    
+    actionLog = nullptr;
+    if (item->isTop()) {
+        actionEdit = new QAction("Edit", this);
+        actionEdit->setIcon(QIcon(":/icons/resources/script_edit.png"));    
+        SBYFile* file = static_cast<SBYFile*>(item);
+        if (!file->haveTasks())  {
+           actionLog = new QAction("Log", this);
+           actionLog->setIcon(QIcon(":/icons/resources/book.png"));
+           actionLog->setEnabled(false);
+           toolBar->addAction(actionLog);
+        }
+    } else {
+        actionEdit = new QAction("View", this);
+        actionEdit->setIcon(QIcon(":/icons/resources/script.png"));
+        actionLog = new QAction("Log", this);
+        actionLog->setIcon(QIcon(":/icons/resources/book.png"));
+        actionLog->setEnabled(false);
+        toolBar->addAction(actionLog);
+    }
     toolBar->addAction(actionEdit);
-    
+    refreshView();
+
     connect(actionPlay, &QAction::triggered, [=]() { 
         if (item->isTop()) {
          SBYFile* file = static_cast<SBYFile*>(item);
@@ -86,6 +103,14 @@ void QSBYItem::refreshView()
     }
     progressBar->setGraphicsEffect(effectFile); 
     progressBar->setValue(item->getPercentage());
+    if (actionLog) {
+        if (item->getPreviousLog()) {
+            actionLog->setEnabled(true);
+            connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName()); });
+        } else {
+            actionLog->setEnabled(false);            
+        }
+    }
 }
 void QSBYItem::runSBYTask()
 {

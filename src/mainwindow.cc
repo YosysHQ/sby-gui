@@ -396,6 +396,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
     connect(fileBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
     connect(fileBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
     connect(fileBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+    connect(fileBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
     connect(fileBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
     connect(fileBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
   
@@ -406,6 +407,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
         connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
         connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
         connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+        connect(groupBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
         connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
         connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
         fileBox->layout()->addWidget(groupBox.get());
@@ -469,9 +471,30 @@ void MainWindow::previewOpen(std::string content, std::string fileName, std::str
     ScintillaEdit *editor = openEditorText(content);
     editor->setReadOnly(true);
 
-    centralTabWidget->addTab(editor, name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
+
+void MainWindow::previewLog(std::string content, std::string fileName, std::string taskName)
+{
+    std::string name = fileName;
+    if (!taskName.empty()) name+= "#" + taskName;
+    name += ".log";
+ 
+    for(int i=0;i<centralTabWidget->count();i++) {
+        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+            centralTabWidget->setCurrentIndex(i); 
+            return; 
+        } 
+    }
+
+    ScintillaEdit *editor = openEditorText(content);
+    editor->setReadOnly(true);
+
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/book.png"), name.c_str());
+    centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+}
+
 
 void MainWindow::editOpen(std::string path, std::string fileName)
 {
@@ -493,7 +516,7 @@ void MainWindow::editOpen(std::string path, std::string fileName)
         }
     });
 
-    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script_edit.png"), name.c_str());
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 

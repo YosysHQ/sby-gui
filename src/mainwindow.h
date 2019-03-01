@@ -60,6 +60,7 @@ class MainWindow : public QMainWindow
     void removeLayoutItems(QLayout* layout);
     void editOpen(std::string path, std::string fileName);
     void previewOpen(std::string content, std::string fileName, std::string taskName);
+    void previewLog(std::string content, std::string fileName, std::string taskName);
     ScintillaEdit *openEditor();
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text);

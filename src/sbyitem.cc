@@ -96,7 +96,7 @@ void SBYFile::update()
                 status = 2;
                 percentage = 100;
             }
-            //updateFromXML(dir / path.stem());
+            updateFromXML(dir / path.stem());
         }        
     }
     else // have tasks

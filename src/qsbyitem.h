@@ -27,11 +27,13 @@ class QSBYItem : public QGroupBox
     void startTask(std::string name);
     void editOpen(std::string path, std::string fileName);
     void previewOpen(std::string content, std::string fileName, std::string taskName);
+    void previewLog(std::string content, std::string fileName, std::string taskName);
   protected:    
     QProgressBar *progressBar;
     QAction *actionPlay;
     QAction *actionStop;
     QAction *actionEdit;
+    QAction *actionLog;
 
     SBYItem *item;
     QProcess *process;
