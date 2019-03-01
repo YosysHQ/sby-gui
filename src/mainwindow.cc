@@ -415,10 +415,20 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
     return items[file->getName()].get();
 }
 
+const char *MonospaceFont()
+{
+	static char fontNameDefault[200] = "";
+	if (!fontNameDefault[0]) {
+        const QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		strcpy(fontNameDefault, font.family().toUtf8());
+	}
+	return fontNameDefault;
+}
+
 ScintillaEdit *MainWindow::openEditor()
 {
     ScintillaEdit *editor = new ScintillaEdit();
-    editor->styleClearAll();
+    editor->styleSetFont(STYLE_DEFAULT, MonospaceFont());    
     editor->setMarginWidthN(0, 35);
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
