@@ -51,7 +51,8 @@ void SBYTask::update()
             status = 1; 
             percentage = 100;
         }
-        if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL")) {
+        if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL") ||
+            boost::filesystem::exists(dir / "TIMEOUT") || boost::filesystem::exists(dir / "UNKNOWN")) {
             status = 2; 
             percentage = 100;
         }
@@ -92,7 +93,8 @@ void SBYFile::update()
                 status = 1;
                 percentage = 100;
             }
-            if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL")) {
+            if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL") ||
+                boost::filesystem::exists(dir / "TIMEOUT") || boost::filesystem::exists(dir / "UNKNOWN")) {
                 status = 2;
                 percentage = 100;
             }
