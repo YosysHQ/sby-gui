@@ -14,12 +14,27 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
     xmlFile.replace_extension("xml");
     timeSpent = boost::none;
     previousLog = boost::none;
+    int errors = 0;
+    int failures = 0;
+    statusColor = 0;
     if (boost::filesystem::exists(xmlFile)) {
         QDomDocument xml;
         QFile f(xmlFile.string().c_str());
         f.open(QIODevice::ReadOnly);
         xml.setContent(&f);
         f.close();
+        QDomNodeList testsuiteList = xml.elementsByTagName("testsuite");
+        if (!testsuiteList.isEmpty()) {
+            QDomElement testsuite = testsuiteList.at(0).toElement();
+            if (testsuite.hasAttribute("errors"))
+            {
+                errors = boost::lexical_cast<int>(testsuite.attribute("errors").toStdString());
+            }
+            if (testsuite.hasAttribute("failures"))
+            {
+                failures = boost::lexical_cast<int>(testsuite.attribute("failures").toStdString());
+            }
+        }
         QDomNodeList testcaseList = xml.elementsByTagName("testcase");
         if (!testcaseList.isEmpty()) {
             QDomElement testcase = testcaseList.at(0).toElement();
@@ -29,9 +44,8 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
             }
             if (testcase.hasAttribute("status"))
             {
-                percentage = 100;
-                status = testcase.attribute("status").toStdString();                
-                if (status=="PASS") {
+                percentage = 100;                
+                if (errors==0 && failures==0) {
                     statusColor = 1;                     
                 }
                 else {
