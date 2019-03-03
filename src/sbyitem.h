@@ -15,7 +15,8 @@ public:
     std::string getFileName() { return path.filename().string(); }
     std::string getFullPath() { return path.string(); }
     std::string getWorkFolder() { return path.parent_path().string(); }    
-    int getStatus() { return status; }
+    int getStatusColor() { return statusColor; }
+    std::string getStatus() { return status; }
     int getPercentage() { return percentage; }
     boost::optional<int> getTimeSpent() { return timeSpent; }
     boost::optional<std::string> getPreviousLog() { return previousLog; }
@@ -28,7 +29,8 @@ public:
 protected:
     std::string name;
     boost::filesystem::path path;
-    int status;
+    int statusColor;
+    std::string status;
     int percentage;
     boost::optional<int> timeSpent;
     boost::optional<std::string> previousLog;

@@ -66,6 +66,10 @@
         <file>resources/symbiotic.png</file>
         <file>resources/check.png</file>
         <file>resources/close.png</file>
+        <file>resources/accept.png</file>
+        <file>resources/cancel.png</file>
+        <file>resources/time.png</file>
+        <file>resources/delete.png</file>
         <file>resources/question.png</file>
     </qresource>
 </RCC>

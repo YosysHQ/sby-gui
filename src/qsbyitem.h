@@ -6,6 +6,7 @@
 #include <QProgressBar>
 #include <QAction>
 #include <QProcess>
+#include <QLabel>
 #include "sbyitem.h"
 
 class QSBYItem : public QGroupBox
@@ -30,6 +31,7 @@ class QSBYItem : public QGroupBox
     void previewLog(std::string content, std::string fileName, std::string taskName);
   protected:    
     QProgressBar *progressBar;
+    QAction *actionStatus;
     QAction *actionPlay;
     QAction *actionStop;
     QAction *actionEdit;
@@ -39,6 +41,7 @@ class QSBYItem : public QGroupBox
     QProcess *process;
     bool shutdown;
     QProcess::ProcessState state;
+    QLabel *label;
 };
 
 #endif // QSBYITEM_H

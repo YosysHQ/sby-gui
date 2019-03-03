@@ -16,13 +16,22 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     }
 
     QVBoxLayout *vbox = new QVBoxLayout(this);
+    vbox->setSpacing(0); 
     QWidget *dummyItem = new QWidget(this);
     QHBoxLayout *hbox = new QHBoxLayout(dummyItem);
+    hbox->setSpacing(0); 
+    hbox->setMargin(0);
+    QWidget *dummyItem2 = new QWidget(this);
+    QHBoxLayout *hbox2 = new QHBoxLayout(dummyItem2);
+    hbox2->setSpacing(0); 
+    hbox2->setMargin(0);
 
     progressBar = new QProgressBar(this);
 
     QToolBar *toolBar = new QToolBar(this);    
-    
+    QToolBar *toolBar2 = new QToolBar(this);   
+    bool statusVisible = false;
+
     actionPlay = new QAction("Play", this);
     actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
     toolBar->addAction(actionPlay);
@@ -39,7 +48,11 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
            actionLog = new QAction("Log", this);
            actionLog->setIcon(QIcon(":/icons/resources/book.png"));
            actionLog->setEnabled(false);
-           toolBar->addAction(actionLog);
+           toolBar2->addAction(actionLog);
+           toolBar2->addAction(actionEdit);
+           statusVisible = true;
+        } else {
+           toolBar->addAction(actionEdit);
         }
     } else {
         actionEdit = new QAction("View", this);
@@ -47,10 +60,18 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
         actionLog = new QAction("Log", this);
         actionLog->setIcon(QIcon(":/icons/resources/book.png"));
         actionLog->setEnabled(false);
-        toolBar->addAction(actionLog);
+        toolBar2->addAction(actionLog);
+        toolBar2->addAction(actionEdit);
+        statusVisible = true;
     }
-    toolBar->addAction(actionEdit);
-    refreshView();
+    
+    label = new QLabel(this);
+    label->setFrameStyle(QFrame::NoFrame);
+    if (statusVisible)
+        label->setText("Previous run: ??? sec");
+    else 
+        label->setVisible(false);
+    label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
 
     connect(actionPlay, &QAction::triggered, [=]() { 
         if (item->isTop()) {
@@ -72,10 +93,25 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName()); });
     }
 
+    actionStatus = nullptr;
+    if (statusVisible) {
+        QToolBar *statusToolBar = new QToolBar(this);    
+        actionStatus = new QAction("Unknown", this);
+        actionStatus->setIcon(QIcon(":/icons/resources/question.png")); 
+        statusToolBar->addAction(actionStatus);
+
+        hbox->addWidget(statusToolBar);
+    }
     hbox->addWidget(progressBar);
     hbox->addWidget(toolBar);
+    hbox2->addWidget(label);
+    hbox2->addWidget(toolBar2);
 
     vbox->addWidget(dummyItem);
+    vbox->addWidget(dummyItem2);
+
+    refreshView();
+
 }
 
 QSBYItem::~QSBYItem()
@@ -96,7 +132,7 @@ void QSBYItem::printOutput()
 void QSBYItem::refreshView()
 {
     QGraphicsColorizeEffect *effectFile = new QGraphicsColorizeEffect;
-    switch(item->getStatus()) {
+    switch(item->getStatusColor()) {
         case 1 : effectFile->setColor(QColor(0, 255, 0, 127)); break;
         case 2 : effectFile->setColor(QColor(255, 0, 0, 127)); break;
         default : effectFile->setColor(QColor(255, 255, 0, 127)); break;
@@ -111,6 +147,32 @@ void QSBYItem::refreshView()
             actionLog->setEnabled(false);            
         }
     }
+    if (actionStatus!=nullptr)
+    {
+        std::string status = item->getStatus();
+        if (status=="PASS") {
+            actionStatus->setIcon(QIcon(":/icons/resources/accept.png")); 
+            actionStatus->setText("Pass");
+        } else if (status=="FAIL") {
+            actionStatus->setIcon(QIcon(":/icons/resources/cancel.png")); 
+            actionStatus->setText("Fail");
+        } else if (status=="ERROR") {
+            actionStatus->setIcon(QIcon(":/icons/resources/delete.png")); 
+            actionStatus->setText("Error");
+        } else if (status=="TIMEOUT") {
+            actionStatus->setIcon(QIcon(":/icons/resources/time.png")); 
+            actionStatus->setText("Timeout");
+        } else {
+            actionStatus->setIcon(QIcon(":/icons/resources/question.png")); 
+            actionStatus->setText("Unknown");
+        }
+    }
+    std::string time = "Previous run: ";
+    if (item->getTimeSpent())
+        time += std::to_string(item->getTimeSpent().get()) + " sec";
+    else
+        time += "??? sec";    
+    label->setText(time.c_str());
 }
 void QSBYItem::runSBYTask()
 {

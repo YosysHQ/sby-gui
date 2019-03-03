@@ -27,6 +27,17 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
             {
                 timeSpent = boost::lexical_cast<int>(testcase.attribute("time").toStdString());
             }
+            if (testcase.hasAttribute("status"))
+            {
+                percentage = 100;
+                status = testcase.attribute("status").toStdString();                
+                if (status=="PASS") {
+                    statusColor = 1;                     
+                }
+                else {
+                    statusColor = 2; 
+                }
+            }
         }
         QDomNodeList systemOutList = xml.elementsByTagName("system-out");
         if (!systemOutList.isEmpty()) {
@@ -42,20 +53,11 @@ SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string con
 
 void SBYTask::update()
 {    
-    status = 0;
+    statusColor = 0;
     percentage = 0;
     boost::filesystem::path dir = path.parent_path().string();
     dir /= (path.stem().string() + "_" + name);
     if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-        if (boost::filesystem::exists(dir / "PASS")) {
-            status = 1; 
-            percentage = 100;
-        }
-        if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL") ||
-            boost::filesystem::exists(dir / "TIMEOUT") || boost::filesystem::exists(dir / "UNKNOWN")) {
-            status = 2; 
-            percentage = 100;
-        }
         updateFromXML(dir / (path.stem().string() + "_" + name));
     }
 }
@@ -83,21 +85,12 @@ bool SBYFile::haveTasks()
 
 void SBYFile::update()
 {
-    status = 0;
+    statusColor = 0;
     percentage = 0;
     if (!haveTasks()) {
         boost::filesystem::path dir = path.parent_path().string();
         dir /= path.stem();
         if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-            if (boost::filesystem::exists(dir / "PASS")) {
-                status = 1;
-                percentage = 100;
-            }
-            if (boost::filesystem::exists(dir / "ERROR") || boost::filesystem::exists(dir / "FAIL") ||
-                boost::filesystem::exists(dir / "TIMEOUT") || boost::filesystem::exists(dir / "UNKNOWN")) {
-                status = 2;
-                percentage = 100;
-            }
             updateFromXML(dir / path.stem());
         }        
     }
@@ -108,19 +101,19 @@ void SBYFile::update()
         for (auto& task : tasks)
         {
             task->update();
-            if (task->getStatus()!=0) counter++;
-            if (task->getStatus()==1) valid++;
+            if (task->getStatusColor()!=0) counter++;
+            if (task->getStatusColor()==1) valid++;
         }
         percentage = counter * 100 / tasks.size();
         if (tasks.size()==counter) {
             if (valid==counter) 
-                status = 1;
+                statusColor = 1;
             else if (valid == 0)
-                status = 2;
+                statusColor = 2;
             else
-                status = 0;
+                statusColor = 0;
         } else {
-            status = 0;
+            statusColor = 0;
         }
     }
 }
