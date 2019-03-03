@@ -105,6 +105,8 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     hbox->addWidget(progressBar);
     hbox->addWidget(toolBar);
     hbox2->addWidget(label);
+    QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
+    hbox2->addItem(spacer);
     hbox2->addWidget(toolBar2);
 
     vbox->addWidget(dummyItem);
