@@ -62,11 +62,11 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
     } 
 }
 
-SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content) : SBYItem(path, name), content(content)
+SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent)
 {
 }
 
-void SBYTask::update()
+void SBYTask::updateTask()
 {    
     statusColor = 0;
     percentage = 0;
@@ -75,6 +75,11 @@ void SBYTask::update()
     if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
         updateFromXML(dir / (path.stem().string() + "_" + name));
     }
+}
+
+void SBYTask::update()
+{
+    parent->update();    
 }
 
 SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().string())
@@ -89,7 +94,7 @@ void SBYFile::parse()
     fs.close();
     for (auto task : parser.get_tasks())
     {
-        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task)));
+        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task),this));
     }
 }
 
@@ -115,7 +120,7 @@ void SBYFile::update()
         int valid = 0;
         for (auto& task : tasks)
         {
-            task->update();
+            task->updateTask();
             if (task->getStatusColor()!=0) counter++;
             if (task->getStatusColor()==1) valid++;
         }

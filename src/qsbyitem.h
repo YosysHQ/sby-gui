@@ -14,7 +14,7 @@ class QSBYItem : public QGroupBox
     Q_OBJECT
 
   public:
-    QSBYItem(const QString & title, SBYItem *item, QWidget *parent = 0);
+    QSBYItem(const QString & title, SBYItem *item, QSBYItem* top, QWidget *parent = 0);
     virtual ~QSBYItem();
     void runSBYTask();
     void refreshView();
@@ -42,6 +42,7 @@ class QSBYItem : public QGroupBox
     bool shutdown;
     QProcess::ProcessState state;
     QLabel *label;
+    QSBYItem *top;
 };
 
 #endif // QSBYITEM_H

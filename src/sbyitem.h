@@ -36,15 +36,19 @@ protected:
     boost::optional<std::string> previousLog;
 };
 
+class SBYFile;
+
 class SBYTask : public SBYItem {
 public:
-    SBYTask(boost::filesystem::path path, std::string name, std::string content);
+    SBYTask(boost::filesystem::path path, std::string name, std::string content, SBYFile* parent);
     void update() override;
+    void updateTask();
     bool isTop() override { return false; }
     std::string getTaskName() override { return name; }
     std::string getContents() override { return content; };
 private:
     std::string content;    
+    SBYFile *parent;
 };
 
 class SBYFile : public SBYItem  {

@@ -3,7 +3,7 @@
 #include <QToolBar>
 #include <QGraphicsColorizeEffect>
 
-QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGroupBox(title, parent), item(item), process(nullptr), shutdown(false)
+QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget *parent) : QGroupBox(title, parent), item(item), process(nullptr), shutdown(false), top(top)
 {
     if (item->isTop()) {
         QString style = "QGroupBox { border: 3px solid gray; border-radius: 3px; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }";
@@ -68,7 +68,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QWidget *parent) : QGro
     label = new QLabel(this);
     label->setFrameStyle(QFrame::NoFrame);
     if (statusVisible)
-        label->setText("Previous run: ??? sec");
+        label->setText("Last run: ??? sec");
     else 
         label->setVisible(false);
     label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
@@ -169,7 +169,7 @@ void QSBYItem::refreshView()
             actionStatus->setText("Unknown");
         }
     }
-    std::string time = "Previous run: ";
+    std::string time = "Last run: ";
     if (item->getTimeSpent())
         time += std::to_string(item->getTimeSpent().get()) + " sec";
     else
@@ -205,6 +205,8 @@ void QSBYItem::runSBYTask()
             actionPlay->setEnabled(true); 
             actionStop->setEnabled(false); 
             item->update();
+            if (top)
+                top->refreshView();
             refreshView(); 
             Q_EMIT taskExecuted();
         }
@@ -220,6 +222,8 @@ void QSBYItem::runSBYTask()
         actionPlay->setEnabled(true); 
         actionStop->setEnabled(false); 
         item->update();
+        if (top)
+            top->refreshView();
         refreshView(); 
         if (exitCode!=0) Q_EMIT appendLog(QString("---TASK STOPPED---\n")); 
         delete process; 

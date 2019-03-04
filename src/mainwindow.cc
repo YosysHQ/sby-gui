@@ -393,7 +393,7 @@ void MainWindow::startTask(std::string name)
 
 QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 {
-    std::unique_ptr<QSBYItem> fileBox = std::make_unique<QSBYItem>(file->getName().c_str(), file, this);
+    std::unique_ptr<QSBYItem> fileBox = std::make_unique<QSBYItem>(file->getName().c_str(), file, nullptr, this);
     connect(fileBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
     connect(fileBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
     connect(fileBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
@@ -403,7 +403,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
   
     for (auto const & task : file->getTasks())
     {
-        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName().c_str(), task.get(), this);
+        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName().c_str(), task.get(), fileBox.get(), this);
         std::string name = groupBox->getName();
         connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
         connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
