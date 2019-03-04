@@ -45,6 +45,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
             if (testcase.hasAttribute("status"))
             {
                 percentage = 100;                
+                status = testcase.attribute("status").toStdString();
                 if (errors==0 && failures==0) {
                     statusColor = 1;                     
                 }
