@@ -106,8 +106,7 @@ void MainWindow::openLocation(QString path)
         
         grid->addWidget(generateFileBox(file.get()), cnt++, 0);
     }
-    QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
-    grid->addItem(spacer,cnt++,0);
+    grid->setRowStretch(cnt++,1);
 }
 MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
