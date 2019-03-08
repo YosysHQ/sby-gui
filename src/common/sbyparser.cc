@@ -180,7 +180,7 @@ std::vector<std::string> SBYParser::read_sbyconfig(std::istream &f, std::string 
             boost::split(tokens, line, boost::is_any_of("\t "), boost::token_compress_on);
 
             if (tokens.size() > 0 && tokens[0][0] == line[0] && boost::ends_with(tokens[0], ":")) {
-                printf("ERROR: Invalid task specifier \"%s\".", tokens[0].c_str());
+                printf("ERROR: Invalid task specifier \"%s\".\n", tokens[0].c_str());
                 throw log_execution_error_exception();
             }
         }

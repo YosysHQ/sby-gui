@@ -32,6 +32,7 @@
 #include <QtXml>
 #include <QFile>
 #include <QGraphicsColorizeEffect>
+#include <QMessageBox>
 #include "SciLexer.h"
 #include "ScintillaEdit.h"
 #include <fstream>
@@ -248,7 +249,8 @@ void MainWindow::createMenusAndBars()
     actionSave = new QAction("Save", this);
     actionSave->setIcon(QIcon(":/icons/resources/document-save.png"));
     actionSave->setShortcuts(QKeySequence::Save);
-    actionSave->setStatusTip("Save SBY file(s)");
+    actionSave->setStatusTip("Save SBY file");
+    connect(actionSave, &QAction::triggered, this, &MainWindow::save_sby);
     menu_File->addAction(actionSave);
     actionSaveAs = new QAction("Save As...", this);
     actionSaveAs->setIcon(QIcon(":/icons/resources/document-save-as.png"));
@@ -353,6 +355,40 @@ void MainWindow::open_sby()
     }
 }
 
+void MainWindow::save_sby()
+{
+    if (actionStop->isEnabled()) {
+        QMessageBox::information(this, "SBY Gui",
+                                "The document can not be saved until tasks are done",
+                                QMessageBox::Ok);
+    } else {
+        QWidget *current = centralTabWidget->currentWidget();
+        if (current!=nullptr)
+        {
+            if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+            {
+                ScintillaEdit *editor = (ScintillaEdit*)current;
+                if (editor->modify()){
+                    int i = centralTabWidget->currentIndex();
+                    QString name = centralTabWidget->tabText(i);
+                    boost::filesystem::path filepath(currentFolder.toStdString());
+                    filepath /= name.toStdString();
+                    QFile file(filepath.c_str());
+                    if (file.open(QIODevice::WriteOnly)) {
+                        QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
+                        file.write(contents);
+                        file.close();
+                        editor->setSavePoint();                    
+                        centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
+                        centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/script_edit.png"));
+                        openLocation(refreshLocation);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void MainWindow::open_folder()
 {
     QString folderName =
@@ -435,6 +471,7 @@ ScintillaEdit *MainWindow::openEditor()
     editor->setMarginWidthN(0, 35);
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
+    editor->setUndoCollection(false);
     return editor;
 }
 
@@ -444,7 +481,10 @@ ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
     QFile file(fullpath.c_str());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
-        editor->get_doc()->insert_string(0, contents);
+        editor->setText(contents.constData());
+        editor->setUndoCollection(true);
+        editor->setSavePoint();
+        editor->gotoPos(0);
     }
     return editor;
 }
@@ -452,9 +492,10 @@ ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
 ScintillaEdit *MainWindow::openEditorText(std::string text)
 {
     ScintillaEdit *editor = openEditor();
-    QByteArray contents;
-    contents.append(text.c_str());
-    editor->get_doc()->insert_string(0, contents);
+    editor->setText(text.c_str());
+    editor->setUndoCollection(true);
+    editor->setSavePoint();
+    editor->gotoPos(0);
     return editor;
 }
 
@@ -510,8 +551,13 @@ void MainWindow::editOpen(std::string path, std::string fileName)
     connect(editor, &ScintillaEdit::modified, [=]() { 
         for(int i=0;i<centralTabWidget->count();i++) {
             if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
-                centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
-                centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
+                if(editor->modify()) {
+                    centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
+                    centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
+                } else {
+                    centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
+                    centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/script_edit.png"));
+                }
                 return; 
             } 
         }

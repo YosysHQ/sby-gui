@@ -74,6 +74,7 @@ class MainWindow : public QMainWindow
 
     void open_sby();
     void open_folder();
+    void save_sby();
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
