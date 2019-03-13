@@ -1,6 +1,5 @@
 #include "sbyitem.h"
 #include <boost/lexical_cast.hpp>
-#include <fstream>
 #include <QDomDocument>
 #include <QFile>
 
@@ -88,10 +87,7 @@ SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().s
 
 void SBYFile::parse()
 {
-    std::fstream fs;
-    fs.open(path.string().c_str(), std::fstream::in);
-    parser.parse(fs);
-    fs.close();
+    parser.parse(path.string());
     for (auto task : parser.get_tasks())
     {
         tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task),this));

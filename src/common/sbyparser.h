@@ -20,6 +20,8 @@
 #ifndef SBYPARSER_H
 #define SBYPARSER_H
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <map>
 #include <string>
@@ -30,20 +32,14 @@ class SBYParser
   public:
     SBYParser();
 
-    bool parse(std::istream &f);
+    bool parse(boost::filesystem::path path);
     std::vector<std::string> &get_tasks() { return tasklist; }
-    std::vector<std::string> &get_all_tags() { return task_tags_all; }
-    std::vector<std::string> &get_tags(std::string task) { return task_tags[task]; }
-    std::vector<std::string> &get_config(std::string task) { return configs[task]; }
-    std::string get_config_content(std::string task);
+    std::string get_config_content(std::string task) { return configs[task]; }
   private:
-    std::vector<std::string> read_sbyconfig(std::istream &f, std::string taskname);
-    void extract_tasks(std::istream &f);
+    std::string dumpcfg(boost::filesystem::path path, std::string task);
 
     std::vector<std::string> tasklist;
-    std::vector<std::string> task_tags_all;
-    std::map<std::string, std::vector<std::string>> task_tags;
-    std::map<std::string, std::vector<std::string>> configs;
+    std::map<std::string, std::string> configs;
 };
 
 #endif // SBYPARSER_H

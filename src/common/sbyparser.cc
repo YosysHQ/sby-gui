@@ -22,242 +22,64 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include "common.h"
 #include "log.h"
 
-//// SymbiYosys parser of SBY config files in Python
-//// Here for reference
-////
-//// def read_sbyconfig(sbydata, taskname):
-////     cfgdata = list()
-////     tasklist = list()
-////
-////     pycode = None
-////     tasks_section = False
-////     task_tags_active = set()
-////     task_tags_all = set()
-////     task_skip_block = False
-////     task_skiping_blocks = False
-////
-////     for line in sbydata:
-////         line = line.rstrip("\n")
-////         line = line.rstrip("\r")
-////
-////         if tasks_section and line.startswith("["):
-////             tasks_section = False
-////
-////         if task_skiping_blocks:
-////             if line == "--":
-////                 task_skip_block = False
-////                 task_skiping_blocks = False
-////                 continue
-////
-////         found_task_tag = False
-////         task_skip_line = False
-////
-////         for t in task_tags_all:
-////             if line.startswith(t+":"):
-////                 line = line[len(t)+1:].lstrip()
-////                 match = t in task_tags_active
-////             elif line.startswith("~"+t+":"):
-////                 line = line[len(t)+2:].lstrip()
-////                 match = t not in task_tags_active
-////             else:
-////                 continue
-////
-////             if line == "":
-////                 task_skiping_blocks = True
-////                 task_skip_block = not match
-////                 task_skip_line = True
-////             else:
-////                 task_skip_line = not match
-////
-////             found_task_tag = True
-////             break
-////
-////         if len(task_tags_all) and not found_task_tag:
-////             tokens = line.split()
-////             if len(tokens) > 0 and tokens[0][0] == line[0] and tokens[0].endswith(":"):
-////                 print("ERROR: Invalid task specifier \"%s\"." % tokens[0], file=sys.stderr)
-////                 sys.exit(1)
-////
-////         if task_skip_line or task_skip_block:
-////             continue
-////
-////         if tasks_section:
-////             if line.startswith("#"):
-////                 continue
-////             line = line.split()
-////             if len(line) > 0:
-////                 tasklist.append(line[0])
-////             for t in line:
-////                 if taskname == line[0]:
-////                     task_tags_active.add(t)
-////                 task_tags_all.add(t)
-////
-////         elif line == "[tasks]":
-////             tasks_section = True
-////
-////         elif line == "--pycode-begin--":
-////             pycode = ""
-////
-////         elif line == "--pycode-end--":
-////             gdict = globals().copy()
-////             gdict["cfgdata"] = cfgdata
-////             gdict["taskname"] = taskname
-////             exec("def output(line):\n  cfgdata.append(line)\n" + pycode, gdict)
-////             pycode = None
-////
-////         else:
-////             if pycode is None:
-////                 cfgdata.append(line)
-////             else:
-////                 pycode += line + "\n"
-////
-////     return cfgdata, tasklist
+#include <QProcess>
 
 SBYParser::SBYParser() {}
 
-std::vector<std::string> SBYParser::read_sbyconfig(std::istream &f, std::string taskname)
+
+std::string SBYParser::dumpcfg(boost::filesystem::path path, std::string task)
 {
-    std::vector<std::string> cfgdata;
-
-    std::string line;
-    bool tasks_section = false;
-    std::set<std::string> task_tags_active;
-    bool task_skip_block = false;
-    bool task_skiping_blocks = false;
-    bool pycode_section = false;
-
-    f.clear();
-    f.seekg(0, f.beg);
-
-    for (auto tag : task_tags[taskname]) {
-        task_tags_active.emplace(tag);
-    }
-
-    while (getline(f, line)) {
-        boost::trim_right(line);
-        if (tasks_section && boost::starts_with(line, "["))
-            tasks_section = false;
-
-        if (task_skiping_blocks) {
-            if (line == "--") {
-                task_skip_block = false;
-                task_skiping_blocks = false;
-                continue;
-            }
-        }
-
-        bool found_task_tag = false;
-        bool task_skip_line = false;
-
-        for (const auto &t : task_tags_all) {
-            bool match = false;
-            if (boost::starts_with(line, t + ":")) {
-                line = line.substr(t.size() + 1);
-                match = task_tags_active.find(t) != task_tags_active.end(); // contain
-            } else if (boost::starts_with(line, "~" + t + ":")) {
-                line = line.substr(t.size() + 2);
-                match = task_tags_active.find(t) == task_tags_active.end(); // does not contain
-            } else
-                continue;
-
-            if (line == "") {
-                task_skiping_blocks = true;
-                task_skip_block = !match;
-                task_skip_line = true;
-            } else {
-                task_skip_line = !match;
-            }
-
-            found_task_tag = true;
-            break;
-        }
-
-        if (!task_tags_all.empty() && !found_task_tag) {
-            std::vector<std::string> tokens;
-            boost::split(tokens, line, boost::is_any_of("\t "), boost::token_compress_on);
-
-            if (tokens.size() > 0 && tokens[0][0] == line[0] && boost::ends_with(tokens[0], ":")) {
-                printf("ERROR: Invalid task specifier \"%s\".\n", tokens[0].c_str());
-                throw log_execution_error_exception();
-            }
-        }
-
-        if (task_skip_line || task_skip_block)
-            continue;
-
-        if (tasks_section) {
-            // ignore
-        } else if (line == "[tasks]") {
-            tasks_section = true;
-        } else if (line == "--pycode-begin--") {
-            pycode_section = true;
-        } else if (line == "--pycode-end--") {
-            pycode_section = false;
-        } else {
-            if (!pycode_section)
-                boost::algorithm::trim(line);
-            cfgdata.push_back(line);
-        }
-    }
-
-    return cfgdata;
+    QProcess process;        
+    QStringList args;
+    args << "--dumpcfg";
+    args << path.filename().c_str();
+    args << task.c_str();
+    process.setProgram("sby");
+    process.setArguments(args);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("PYTHONUNBUFFERED","1");
+    process.setProcessEnvironment(env);
+    process.setWorkingDirectory(path.parent_path().string().c_str());
+    process.setProcessChannelMode(QProcess::MergedChannels);       
+    process.start();   
+    process.waitForFinished();
+    QString output(process.readAllStandardOutput());
+    return output.toStdString();
 }
 
-void SBYParser::extract_tasks(std::istream &f)
-{
-    f.seekg(0, f.beg);
-
-    std::string line;
-    bool tasks_section = false;
-
-    while (getline(f, line)) {
-        boost::trim_right(line);
-        if (tasks_section && boost::starts_with(line, "["))
-            tasks_section = false;
-
-        if (tasks_section) {
-            if (boost::starts_with(line, "#"))
-                continue;
-            std::vector<std::string> val;
-            boost::split(val, line, boost::is_any_of("\t "), boost::token_compress_on);
-            if (val.size() > 0 && !val[0].empty()) {
-                tasklist.push_back(val[0]);
-                task_tags.emplace(val[0], val);
-
-                task_tags_all.insert(task_tags_all.end(), val.begin(), val.end());
-            }
-        } else if (line == "[tasks]") {
-            tasks_section = true;
-        }
-    }
-}
-
-bool SBYParser::parse(std::istream &f)
+bool SBYParser::parse(boost::filesystem::path path)
 {
     try {
-        if (!f)
-            log_error("Failed to open SBY file.\n");
+        QProcess process;        
+        QStringList args;
+        args << "--dumptasks";
+        args << path.filename().c_str();
+        process.setProgram("sby");
+        process.setArguments(args);
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        env.insert("PYTHONUNBUFFERED","1");
+        process.setProcessEnvironment(env);
+        process.setWorkingDirectory(path.parent_path().string().c_str());
+        process.setProcessChannelMode(QProcess::MergedChannels);       
+        process.start();   
+        process.waitForFinished();
+        QString output(process.readAllStandardOutput());
+        QStringList tasks = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
 
-        extract_tasks(f);
-        for (const auto &task : tasklist) {
-            configs.emplace(task, read_sbyconfig(f, task));
+        for (auto task : tasks) {
+            configs.emplace(task.toStdString(), dumpcfg(path, task.toStdString()));    
+            tasklist.push_back(task.toStdString());            
         }
-        if (tasklist.empty())
-            configs.emplace("", read_sbyconfig(f, ""));
+        if (tasks.isEmpty())
+        {
+            configs.emplace("", dumpcfg(path, ""));
+        }
         return true;
-    } catch (log_execution_error_exception) {
+    } catch (...) {
         return false;
     }
-}
-
-std::string SBYParser::get_config_content(std::string task)
-{
-    std::stringstream val;
-    for(auto line : configs[task]) {
-        val << line << std::endl;
-    }
-    return val.str();
 }
