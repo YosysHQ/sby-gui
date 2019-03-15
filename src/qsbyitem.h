@@ -20,6 +20,7 @@ class QSBYItem : public QGroupBox
     void refreshView();
     std::string getName();
     void stopProcess();
+    QSBYItem* getParent() { return top; }
   protected Q_SLOTS:
     void printOutput();
   Q_SIGNALS:
