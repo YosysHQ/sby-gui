@@ -67,14 +67,19 @@ class MainWindow : public QMainWindow
     void refreshView();
     void appendLog(QString logline);
     void showTime();
+    virtual void closeEvent(QCloseEvent * event);
+    void save_sby(int index);
+    bool closeTab(int index, bool forceSave);
   protected Q_SLOTS:
-    void closeTab(int index);
     void taskExecuted();
     void startTask(std::string name);
 
     void open_sby();
     void open_folder();
-    void save_sby();
+    void save_file();
+    void save_all();
+    void close_editor();
+    void close_all();
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
@@ -91,8 +96,11 @@ class MainWindow : public QMainWindow
     QAction *actionOpen;
     QAction *actionOpenFolder;
     QAction *actionSave;
+    QAction *actionSaveAll;
     QAction *actionSaveAs;
     QAction *actionRefresh;
+    QAction *actionClose;
+    QAction *actionCloseAll;
     QAction *actionExit;
 
     QAction *actionCut;

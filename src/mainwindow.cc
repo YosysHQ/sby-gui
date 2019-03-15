@@ -169,7 +169,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     centralTabWidget = new QTabWidget();
     centralTabWidget->setTabsClosable(true);
     centralTabWidget->setMovable(true);
-    connect(centralTabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
+    connect(centralTabWidget, &QTabWidget::tabCloseRequested, [=](int index) { closeTab(index, false); });
 
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
@@ -200,8 +200,6 @@ void MainWindow::showTime()
 }
 
 MainWindow::~MainWindow() {}
-
-void MainWindow::closeTab(int index) { centralTabWidget->removeTab(index); }
 
 void MainWindow::createMenusAndBars()
 {
@@ -250,7 +248,7 @@ void MainWindow::createMenusAndBars()
     actionSave->setIcon(QIcon(":/icons/resources/document-save.png"));
     actionSave->setShortcuts(QKeySequence::Save);
     actionSave->setStatusTip("Save SBY file");
-    connect(actionSave, &QAction::triggered, this, &MainWindow::save_sby);
+    connect(actionSave, &QAction::triggered, this, &MainWindow::save_file);
     menu_File->addAction(actionSave);
     actionSaveAs = new QAction("Save As...", this);
     actionSaveAs->setIcon(QIcon(":/icons/resources/document-save-as.png"));
@@ -260,17 +258,22 @@ void MainWindow::createMenusAndBars()
     actionRefresh->setIcon(QIcon(":/icons/resources/view-refresh.png"));
     connect(actionRefresh, &QAction::triggered, [=]() { refreshView(); });
     menu_File->addAction(actionSaveAs);
-    menu_File->addAction(new QAction("Save All", this));
-    menu_File->addAction(new QAction("Rename...", this));
-    menu_File->addAction(new QAction("Close", this));
-    menu_File->addAction(new QAction("Close all", this));
-    menu_File->addAction(new QAction("Close More", this));
-    menu_File->addSeparator();
-    menu_File->addAction(new QAction("recent.txt", this));
-    menu_File->addSeparator();
-    menu_File->addAction(new QAction("Restore Recent Closed File", this));
-    menu_File->addAction(new QAction("Open All Recent Files", this));
-    menu_File->addAction(new QAction("Empty Recent Files List", this));
+
+    actionSaveAll = new QAction("Save All", this);
+    actionSaveAll->setStatusTip("Save all SBY files");
+    connect(actionSaveAll, &QAction::triggered, this, &MainWindow::save_all);
+    menu_File->addAction(actionSaveAll);
+
+    actionClose = new QAction("Close...", this);
+    actionClose->setShortcuts(QKeySequence::Close);
+    actionClose->setStatusTip("Close current editor");
+    connect(actionClose, &QAction::triggered, this, &MainWindow::close_editor);
+    menu_File->addAction(actionClose);
+
+    actionCloseAll = new QAction("Close all", this);
+    actionCloseAll->setStatusTip("Close all editors");
+    connect(actionCloseAll, &QAction::triggered, this, &MainWindow::close_all);
+    menu_File->addAction(actionCloseAll);
     menu_File->addSeparator();
     actionExit = new QAction("Exit", this);
     actionExit->setIcon(QIcon(":/icons/resources/system-log-out.png"));
@@ -355,37 +358,55 @@ void MainWindow::open_sby()
     }
 }
 
-void MainWindow::save_sby()
+void MainWindow::save_sby(int index)
+{
+    QWidget *current = centralTabWidget->widget(index);
+    if (current!=nullptr)
+    {
+        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        {
+            ScintillaEdit *editor = (ScintillaEdit*)current;
+            if (editor->modify()){
+                QString name = centralTabWidget->tabText(index);
+                boost::filesystem::path filepath(currentFolder.toStdString());
+                filepath /= name.toStdString();
+                QFile file(filepath.c_str());
+                if (file.open(QIODevice::WriteOnly)) {
+                    QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
+                    file.write(contents);
+                    file.close();
+                    editor->setSavePoint();                    
+                    centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
+                    centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
+                    openLocation(refreshLocation);
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::save_all()
 {
     if (actionStop->isEnabled()) {
         QMessageBox::information(this, "SBY Gui",
                                 "The document can not be saved until tasks are done",
                                 QMessageBox::Ok);
     } else {
-        QWidget *current = centralTabWidget->currentWidget();
-        if (current!=nullptr)
+        for (int i=0;i<centralTabWidget->count();i++)
         {
-            if (std::string(current->metaObject()->className()) == "ScintillaEdit")
-            {
-                ScintillaEdit *editor = (ScintillaEdit*)current;
-                if (editor->modify()){
-                    int i = centralTabWidget->currentIndex();
-                    QString name = centralTabWidget->tabText(i);
-                    boost::filesystem::path filepath(currentFolder.toStdString());
-                    filepath /= name.toStdString();
-                    QFile file(filepath.c_str());
-                    if (file.open(QIODevice::WriteOnly)) {
-                        QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
-                        file.write(contents);
-                        file.close();
-                        editor->setSavePoint();                    
-                        centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
-                        centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/script_edit.png"));
-                        openLocation(refreshLocation);
-                    }
-                }
-            }
+            save_sby(i);
         }
+    }
+}
+
+void MainWindow::save_file()
+{
+    if (actionStop->isEnabled()) {
+        QMessageBox::information(this, "SBY Gui",
+                                "The document can not be saved until tasks are done",
+                                QMessageBox::Ok);
+    } else {
+        save_sby(centralTabWidget->currentIndex());
     }
 }
 
@@ -399,6 +420,55 @@ void MainWindow::open_folder()
     if (!folderName.isEmpty()) {
         openLocation(folderName);
     }
+}
+
+void MainWindow::close_editor()
+{
+    closeTab(centralTabWidget->currentIndex(), false);
+}
+
+void MainWindow::close_all()
+{
+    bool forceSave = false;
+    for (int i=centralTabWidget->count()-1;i>=0;i--)
+    {
+        forceSave = closeTab(i, forceSave);
+    }
+}
+
+bool MainWindow::closeTab(int index, bool forceSave) { 
+    bool force = forceSave;
+    QWidget *current = centralTabWidget->widget(index);
+    if (current!=nullptr)
+    {
+        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        {
+            ScintillaEdit *editor = (ScintillaEdit*)current;
+            if (editor->modify()) {
+                bool save = false; 
+                if (!force) {
+                    int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to save file?", QMessageBox::Yes|QMessageBox::YesToAll|QMessageBox::No).exec();
+                    if (result == QMessageBox::Yes || result == QMessageBox::YesToAll) save = true;
+                    if (result == QMessageBox::YesToAll) force = true;
+                }
+                if (save)
+                    save_sby(index);
+            }
+        }
+    }
+
+    centralTabWidget->removeTab(index);
+    return force;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    if (QMessageBox::Yes == QMessageBox(QMessageBox::Information, "SBY Gui", "Are you sure you want to quit?", QMessageBox::Yes|QMessageBox::No).exec()) 
+    {
+        close_all();
+        event->accept();    
+    }    
 }
 
 void MainWindow::taskExecuted()
