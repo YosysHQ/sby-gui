@@ -91,6 +91,7 @@ void SBYFile::parse()
     for (auto task : parser.get_tasks())
     {
         tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task),this));
+        tasksList.insert(QString(task.c_str()));
     }
 }
 

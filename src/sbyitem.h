@@ -1,6 +1,8 @@
 #ifndef SBYITEM_H
 #define SBYITEM_H
 
+#include <QSet>
+#include <QString>
 #include <string>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -61,8 +63,10 @@ public:
     std::string getTaskName() override { return ""; }
     std::string getContents() override { return ""; };
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
+    QSet<QString> &getTasksList() { return tasksList; }
 private:
     SBYParser parser;
     std::vector<std::unique_ptr<SBYTask>> tasks;
+    QSet<QString> tasksList;
 };
 #endif // SBYITEM_H
