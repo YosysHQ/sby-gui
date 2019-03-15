@@ -33,6 +33,7 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTime>
+#include <QFileSystemWatcher>
 #include <map>
 #include <deque>
 #include "qsbyitem.h"
@@ -70,16 +71,19 @@ class MainWindow : public QMainWindow
     virtual void closeEvent(QCloseEvent * event);
     void save_sby(int index);
     bool closeTab(int index, bool forceSave);
+    QStringList getFileList(QString path);
   protected Q_SLOTS:
     void taskExecuted();
     void startTask(std::string name);
 
-    void open_sby();
     void open_folder();
     void save_file();
     void save_all();
     void close_editor();
     void close_all();
+
+    void directoryChanged(const QString & path);
+    void fileChanged(const QString & path);
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
@@ -93,7 +97,6 @@ class MainWindow : public QMainWindow
     QString currentFolder;
 
     QAction *actionNew;
-    QAction *actionOpen;
     QAction *actionOpenFolder;
     QAction *actionSave;
     QAction *actionSaveAll;
@@ -118,7 +121,11 @@ class MainWindow : public QMainWindow
 
     QTime *taskTimer;
 
+    QFileSystemWatcher *fileWatcher;
+
+    QStringList currentFileList;
     std::vector<std::unique_ptr<SBYFile>> files;
+    std::map<std::string, SBYFile*> fileMap;
     std::map<std::string, std::unique_ptr<QSBYItem>> items;
     std::deque<std::string> taskList;
 };

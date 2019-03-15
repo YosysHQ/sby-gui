@@ -73,6 +73,13 @@ void MainWindow::removeLayoutItems(QLayout* layout)
     }
 }
 
+QStringList MainWindow::getFileList(QString path)
+{
+    QDir folder(currentFolder);
+    folder.setNameFilters(QStringList()<<"*.sby");
+    return folder.entryList();
+}
+
 void MainWindow::openLocation(QString path)
 {
     std::vector<boost::filesystem::path> fileList;
@@ -82,14 +89,22 @@ void MainWindow::openLocation(QString path)
             currentFolder = path;
             fileList = getFilesInDir(currentFolder.toStdString().c_str(), ".sby");
         } else {
-            boost::filesystem::path filepath(path.toStdString());
-            currentFolder = filepath.parent_path().string().c_str();
-            fileList.push_back(filepath);
+            QMessageBox::critical(this, "SBY Gui",
+                                "Invalid file location",
+                                QMessageBox::Ok);
+            return;
         }
+
+        currentFileList = getFileList(currentFolder);
+        fileWatcher->addPath(currentFolder);
+        for(auto name : currentFileList) {
+            fileWatcher->addPath(QDir(currentFolder).filePath(name));
+        }        
     } 
 
     items.clear();
     removeLayoutItems(grid);
+    fileMap.clear();
     files.clear();
     taskList.clear();
 
@@ -101,6 +116,7 @@ void MainWindow::openLocation(QString path)
         f->parse();
         f->update();
         files.push_back(std::move(f));
+        fileMap.emplace(std::make_pair(file.string(), files.back().get()));
     }
 
     for(const auto & file : files) {
@@ -174,6 +190,10 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     splitter_v->addWidget(centralTabWidget);
     splitter_v->addWidget(tabWidget);
 
+    fileWatcher = new QFileSystemWatcher(this);
+    connect(fileWatcher, &QFileSystemWatcher::fileChanged, this, &MainWindow::fileChanged);
+    connect(fileWatcher, &QFileSystemWatcher::directoryChanged, this, &MainWindow::directoryChanged);
+
     openLocation(path);
 
     taskTimer = new QTime;
@@ -182,6 +202,88 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::showTime);
     timer->start(1000);
+}
+
+void MainWindow::directoryChanged(const QString & path)
+{
+    QStringList newFileList = getFileList(currentFolder);
+
+    QSet<QString> newDirSet = QSet<QString>::fromList(newFileList); 
+    QSet<QString> currentDirSet = QSet<QString>::fromList(currentFileList);
+    QSet<QString> newFiles = newDirSet - currentDirSet;
+    QSet<QString> deletedFiles = currentDirSet - newDirSet;
+
+
+    QStringList newList = newFiles.toList();
+    QStringList deleteList = deletedFiles.toList();
+
+    if(!newList.isEmpty())
+    {
+        for(auto name : newList) {
+            QString filename = QDir(currentFolder).filePath(name);
+            fileWatcher->addPath(filename);
+            std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString().c_str()));
+            f->parse();
+            f->update();
+            files.push_back(std::move(f));
+            fileMap.emplace(std::make_pair(filename.toStdString(), files.back().get()));
+
+            grid->addWidget(generateFileBox(files.back().get()), (int)files.size(), 0);
+        }
+    }
+    if(!deleteList.isEmpty())
+    {
+        for(auto name : deleteList) {
+            QString filename = QDir(currentFolder).filePath(name);
+            fileWatcher->removePath(filename);
+            SBYFile *file = fileMap[filename.toStdString()];
+            for (auto const & task : file->getTasks())
+            {
+                std::string name = file->getName() + "#" + task->getName();
+                auto it = items.find(name);
+                if (it!=items.end()) {
+                    items.erase(it);
+                }
+            }
+            auto it = items.find(file->getName());
+            if (it!=items.end()) {
+                items.erase(it);
+            }
+            auto itFile = files.begin();
+            while(itFile != files.end()) {
+                if (itFile->get()->getFullPath() == filename.toStdString()) {
+                    files.erase(itFile);
+                }
+                else ++itFile;
+            }
+        }
+    }    
+    currentFileList = newFileList;
+}
+
+void MainWindow::fileChanged(const QString & filename)
+{
+    SBYFile *file = fileMap[filename.toStdString()];
+    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString().c_str()));
+    f->parse();
+    f->update();
+    QSet<QString> newTaskSet = f->getTasksList(); 
+    QSet<QString> currTaskSet = file->getTasksList(); 
+    QSet<QString> newTasks = newTaskSet - currTaskSet;
+    QSet<QString> deletedTasks = currTaskSet - newTaskSet;
+
+    if(!newTasks.isEmpty())
+    {
+        for(auto name : newTasks) {
+            //printf("new:%s\n",name.toStdString().c_str());
+        }
+    }
+    if(!deletedTasks.isEmpty())
+    {
+        for(auto name : deletedTasks) {
+            //printf("del:%s\n",name.toStdString().c_str());
+        }
+    }    
 }
 
 void MainWindow::showTime()
@@ -232,13 +334,6 @@ void MainWindow::createMenusAndBars()
     actionNew->setShortcuts(QKeySequence::New);
     actionNew->setStatusTip("New project file");
     menu_File->addAction(actionNew);
-    actionOpen = new QAction("Open SBY...", this);
-    actionOpen->setIcon(QIcon(":/icons/resources/document-open.png"));
-    actionOpen->setShortcuts(QKeySequence::Open);
-    actionOpen->setStatusTip("Open existing SBY file");
-    connect(actionOpen, &QAction::triggered, this, &MainWindow::open_sby);
-
-    menu_File->addAction(actionOpen);
     actionOpenFolder = new QAction("Open Folder...", this);
     actionOpenFolder->setIcon(QIcon(":/icons/resources/folder-open.png"));
     actionOpenFolder->setStatusTip("Open folder with SBY file(s)");
@@ -315,7 +410,6 @@ void MainWindow::createMenusAndBars()
     menu_Help->addAction(new QAction("About", this));
 
     mainToolBar->addAction(actionNew);
-    mainToolBar->addAction(actionOpen);
     mainToolBar->addAction(actionOpenFolder);
     mainToolBar->addAction(actionSave);
     mainToolBar->addAction(actionRefresh);
@@ -348,16 +442,6 @@ void MainWindow::createMenusAndBars()
      });
 }
 
-void MainWindow::open_sby()
-{
-    QString fileName =
-            QFileDialog::getOpenFileName(this, QString("Open SBY"), QString(),
-                                         QString("SBY files (*.sby)"));
-    if (!fileName.isEmpty()) {
-        openLocation(fileName);
-    }
-}
-
 void MainWindow::save_sby(int index)
 {
     QWidget *current = centralTabWidget->widget(index);
@@ -378,7 +462,6 @@ void MainWindow::save_sby(int index)
                     editor->setSavePoint();                    
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
                     centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
-                    openLocation(refreshLocation);
                 }
             }
         }
