@@ -272,18 +272,40 @@ void MainWindow::fileChanged(const QString & filename)
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
-    if(!newTasks.isEmpty())
-    {
-        for(auto name : newTasks) {
-            //printf("new:%s\n",name.toStdString().c_str());
-        }
-    }
     if(!deletedTasks.isEmpty())
     {
         for(auto name : deletedTasks) {
-            //printf("del:%s\n",name.toStdString().c_str());
+            std::string n = file->getFileName() + "#" + name.toStdString();
+            auto it = items.begin();
+            while(it != items.end()) {
+                if (it->second->getName() == n) {
+                    items.erase(it);
+                    break;                    
+                }
+                else ++it;
+            }
         }
-    }    
+    } 
+    
+    file->refresh();
+
+    if(!newTasks.isEmpty())
+    {
+        for(auto name : newTasks) {
+            QSBYItem *fileBox = items[file->getFileName()].get();
+            std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name.toStdString().c_str(), file->getTask(name.toStdString()), fileBox, this);
+            std::string newname = groupBox->getName();
+            connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
+            connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
+            connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
+            connect(groupBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
+            connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
+            connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
+            fileBox->layout()->addWidget(groupBox.get());            
+            items.emplace(std::make_pair(newname, std::move(groupBox)));
+        }
+    }
+    items[file->getFileName()]->refreshView();
 }
 
 void MainWindow::showTime()

@@ -58,11 +58,13 @@ public:
     SBYFile(boost::filesystem::path path);
     void parse();
     bool haveTasks();
+    void refresh();
     void update() override;
     bool isTop() override { return true; }
     std::string getTaskName() override { return ""; }
     std::string getContents() override { return ""; };
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
+    SBYTask *getTask(std::string name);
     QSet<QString> &getTasksList() { return tasksList; }
 private:
     SBYParser parser;

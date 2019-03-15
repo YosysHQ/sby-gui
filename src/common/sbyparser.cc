@@ -54,6 +54,9 @@ std::string SBYParser::dumpcfg(boost::filesystem::path path, std::string task)
 bool SBYParser::parse(boost::filesystem::path path)
 {
     try {
+        tasklist.clear();
+        configs.clear();
+
         QProcess process;        
         QStringList args;
         args << "--dumptasks";

@@ -95,6 +95,42 @@ void SBYFile::parse()
     }
 }
 
+void SBYFile::refresh()
+{
+    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(path);
+    f->parse();
+    f->update();
+
+    QSet<QString> newTaskSet = f->getTasksList(); 
+    QSet<QString> currTaskSet = getTasksList(); 
+    QSet<QString> newTasks = newTaskSet - currTaskSet;
+    QSet<QString> deletedTasks = currTaskSet - newTaskSet;
+
+    parser.parse(path.string());
+
+    if(!newTasks.isEmpty())
+    {
+        for(auto name : newTasks) {
+            tasks.push_back(std::make_unique<SBYTask>(path,name.toStdString(), parser.get_config_content(name.toStdString()),this));
+            tasksList.insert(name);
+        }
+    }
+    if(!deletedTasks.isEmpty())
+    {
+        for(auto name : deletedTasks) {
+            auto it = tasks.begin();
+            while(it != tasks.end()) {
+                if (it->get()->getTaskName() == name.toStdString()) {
+                    tasks.erase(it);
+                }
+                else ++it;
+            }            
+            tasksList.remove(name);
+        }
+    }
+    update();
+}
+
 bool SBYFile::haveTasks()
 {
     return parser.get_tasks().size() != 0;
@@ -133,4 +169,13 @@ void SBYFile::update()
             statusColor = 0;
         }
     }
+}
+
+SBYTask *SBYFile::getTask(std::string name)
+{
+    for(auto& task : tasks) {
+        if (task->getTaskName() == name) 
+            return task.get();
+    }
+    return nullptr;
 }
