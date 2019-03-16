@@ -642,7 +642,7 @@ const char *MonospaceFont()
 	return fontNameDefault;
 }
 
-ScintillaEdit *MainWindow::openEditor()
+ScintillaEdit *MainWindow::openEditor(int lexer)
 {
     ScintillaEdit *editor = new ScintillaEdit();
     editor->styleSetFont(STYLE_DEFAULT, MonospaceFont());    
@@ -651,17 +651,20 @@ ScintillaEdit *MainWindow::openEditor()
     editor->setScrollWidthTracking(1);
     editor->setUndoCollection(false);
 
-    editor->setLexer(SCLEX_SBY);
-    
-    editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
-    editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
-    editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
+    if (lexer!=0)
+    {
+        editor->setLexer(SCLEX_SBY);
+        
+        editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
+        editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
+        editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
+    }
     return editor;
 }
 
 ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
 {
-    ScintillaEdit *editor = openEditor();
+    ScintillaEdit *editor = openEditor(SCLEX_SBY);
     QFile file(fullpath.c_str());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
@@ -673,9 +676,9 @@ ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
     return editor;
 }
 
-ScintillaEdit *MainWindow::openEditorText(std::string text)
+ScintillaEdit *MainWindow::openEditorText(std::string text, int lexer)
 {
-    ScintillaEdit *editor = openEditor();
+    ScintillaEdit *editor = openEditor(lexer);
     editor->setText(text.c_str());
     editor->setUndoCollection(true);
     editor->setSavePoint();
@@ -694,7 +697,7 @@ void MainWindow::previewOpen(std::string content, std::string fileName, std::str
         } 
     }
 
-    ScintillaEdit *editor = openEditorText(content);
+    ScintillaEdit *editor = openEditorText(content, SCLEX_SBY);
     editor->setReadOnly(true);
 
     centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
@@ -714,7 +717,7 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
         } 
     }
 
-    ScintillaEdit *editor = openEditorText(content);
+    ScintillaEdit *editor = openEditorText(content, 0);
     editor->setReadOnly(true);
 
     centralTabWidget->addTab(editor, QIcon(":/icons/resources/book.png"), name.c_str());
