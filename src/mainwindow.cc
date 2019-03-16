@@ -658,6 +658,7 @@ ScintillaEdit *MainWindow::openEditor(int lexer)
         editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
         editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
         editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
+        editor->styleSetFore(SCE_SBY_TEXT,    0x000000);
     }
     return editor;
 }

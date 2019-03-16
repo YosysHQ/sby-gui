@@ -9,6 +9,7 @@
 #define SCE_SBY_DEFAULT 0
 #define SCE_SBY_COMMENT 1
 #define SCE_SBY_SECTION 2
+#define SCE_SBY_TEXT    3
 
 extern Scintilla::LexerModule lmSBY; 
 

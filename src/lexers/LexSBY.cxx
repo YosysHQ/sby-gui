@@ -28,6 +28,10 @@ static void ColouriseSBYDoc(Sci_PositionU startPos, Sci_Position length, int ini
 					sc.SetState(SCE_SBY_COMMENT);
 				else if (sc.ch == '[')
 					sc.SetState(SCE_SBY_SECTION);
+				else if (sc.ch == ' ')
+					sc.SetState(SCE_SBY_DEFAULT);
+				else 
+					sc.SetState(SCE_SBY_TEXT);
 				break;
 			case SCE_SBY_COMMENT:
 				break;
