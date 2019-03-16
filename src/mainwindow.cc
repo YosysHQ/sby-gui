@@ -36,6 +36,7 @@
 #include "lexers/LexSBY.h"
 #include "../src/Catalogue.h"
 #include "ScintillaEdit.h"
+#include "SciLexer.h"
 #include <fstream>
 
 std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, const std::string &extension){
@@ -644,6 +645,16 @@ const char *MonospaceFont()
 	return fontNameDefault;
 }
 
+static const char *verilog_instre1 = "always and assign attribute begin buf bufif0 bufif1 case casex casez cmos deassign default defparam disable edge else end endattribute endcase endfunction endmodule endprimitive endspecify endtable endtask event for force forever fork function highz0 highz1 if ifnone initial inout input integer join medium module large localparam macromodule nand negedge nmos nor not notif0 notif1 or output parameter pmos posedge primitive pull0 pull1 pulldown pullup rcmos real realtime reg release repeat rnmos rpmos rtran rtranif0 rtranif1 scalared signed small specify specparam strength strong0 strong1 supply0 supply1 table task time tran tranif0 tranif1 tri tri0 tri1 triand trior trireg unsigned vectored wait wand weak0 weak1 while wire wor xnor xor alias always_comb always_ff always_latch assert assume automatic before bind bins binsof break constraint context continue cover cross design dist do expect export extends extern final first_match foreach forkjoin iff ignore_bins illegal_bins import incdir include inside instance intersect join_any join_none liblist library matches modport new noshowcancelled null packed priority protected pulsestyle_onevent pulsestyle_ondetect pure rand randc randcase randsequence ref return showcancelled solve tagged this throughout timeprecision timeunit unique unique0 use wait_order wildcard with within class clocking config generate covergroup interface package program property sequence endclass endclocking endconfig endgenerate endgroup endinterface endpackage endprogram endproperty endsequence bit byte cell chandle const coverpoint enum genvar int local logic longint shortint shortreal static string struct super type typedef union var virtual void";
+static const char *verilog_instre2 = "SYNTHESIS $assertkill $assertoff $asserton $bits $bitstoreal $bitstoshortreal $cast $comment $countdrivers $countones $dimensions $display $dist_chi_square $dist_erlang $dist_exponential $dist_normal $dist_poisson $dist_t $dist_uniform $dumpall $dumpfile $dumpflush $dumplimit $dumpoff $dumpon $dumpvars $error $exit $fatal $fclose $fdisplay $fell $feof $ferror $fflush $fgetc $fgets $finish $fmonitor $fopen $fread $fscanf $fseek $fstrobe $ftell $fullskew $fwrite $get_coverage $getpattern $high $history $hold $increment $incsave $info $input $isunbounded $isunknown $itor $key $left $list $load_coverage_db $log $low $monitor $monitoroff $monitoron $nochange $nokey $nolog $onehot $onehot0 $past $period $printtimescale $q_add $q_exam $q_full $q_initialize $q_remove $random $readmemb $readmemh $realtime $realtobits $recovery $recrem $removal $reset $reset_count $reset_value $restart $rewind $right $root $rose $rtoi $sampled $save $scale $scope $set_coverage_db_name $setup $setuphold $sformat $shortrealtobits $showscopes $showvariables $showvars $signed $size $skew $sreadmemb $sreadmemh $sscanf $stable $stime $stop $strobe $swrite $time $timeformat $timescale $timeskew $typename $typeof $uandom $ungetc $unit $unpacked_dimensions $unsigned $upscope $urandom_range $value$plusargs $var $vcdclose $version $warning $width $write";
+
+static const char *vhdl_instre1 = "access after alias all architecture array assert attribute begin block body buffer bus case component configuration constant disconnect downto else elsif end entity exit file for function generate generic group guarded if impure in inertial inout is label library linkage literal loop map new next null of on open others out package port postponed procedure process pure range record register reject report return select severity shared signal subtype then to transport type unaffected units until use variable wait when while with assume assume_guarantee context cover default fairness force parameter property protected release restrict restrict_guarantee sequence strong vmode vprop vunit";
+static const char *vhdl_instre2 = "abs and mod nand nor not or rem rol ror sla sll sra srl xnor xor";
+static const char *vhdl_type1 = "left right low high ascending image value pos val succ pred leftof rightof base range reverse_range length delayed stable quiet transaction event active last_event last_active last_value driving driving_value simple_name path_name instance_name";
+static const char *vhdl_type2 = "now readline read writeline write endfile resolved to_bit to_bitvector to_stdulogic to_stdlogicvector to_stdulogicvector to_x01 to_x01z to_UX01 rising_edge falling_edge is_x shift_left shift_right rotate_left rotate_right resize to_integer to_unsigned to_signed std_match to_01";
+static const char *vhdl_type3 = "std ieee work standard textio std_logic_1164 std_logic_arith std_logic_misc std_logic_signed std_logic_textio std_logic_unsigned numeric_bit numeric_std math_complex math_real vital_primitives vital_timing";
+static const char *vhdl_type4 = "boolean bit character severity_level integer real time delay_length natural positive string bit_vector file_open_kind file_open_status line text side width std_ulogic std_ulogic_vector std_logic std_logic_vector X01 X01Z UX01 UX01Z unsigned signed";
+   
 ScintillaEdit *MainWindow::openEditor(int lexer)
 {
     ScintillaEdit *editor = new ScintillaEdit();
@@ -655,12 +666,61 @@ ScintillaEdit *MainWindow::openEditor(int lexer)
 
     if (lexer!=0)
     {
-        editor->setLexer(SCLEX_SBY);
-        
-        editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
-        editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
-        editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
-        editor->styleSetFore(SCE_SBY_TEXT,    0x000000);
+        if (lexer==SCLEX_SBY) {
+            editor->setLexer(SCLEX_SBY);
+            
+            editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
+            editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
+            editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
+            editor->styleSetFore(SCE_SBY_TEXT,    0x000000);
+        } else if (lexer==SCLEX_VERILOG) {
+            editor->setLexer(SCLEX_VERILOG);            
+            editor->setKeyWords(0, verilog_instre1);
+            editor->setKeyWords(1, verilog_instre2);
+            editor->styleSetFore(SCE_V_DEFAULT,         0x000000);
+            editor->styleSetFore(SCE_V_COMMENT,         0x008000);
+            editor->styleSetFore(SCE_V_COMMENTLINE,     0x008000);
+            editor->styleSetFore(SCE_V_COMMENTLINEBANG, 0x008080);
+            editor->styleSetFore(SCE_V_NUMBER,          0xFF8000);
+            editor->styleSetFore(SCE_V_WORD,            0x8000FF);
+            editor->styleSetFore(SCE_V_STRING,          0x808080);
+            editor->styleSetFore(SCE_V_WORD2,           0x8000FF);
+            editor->styleSetFore(SCE_V_WORD3,           0x8000FF);
+            editor->styleSetFore(SCE_V_PREPROCESSOR,    0x804000);
+            editor->styleSetFore(SCE_V_OPERATOR,        0x000080);
+            editor->styleSetFore(SCE_V_IDENTIFIER,      0x000000);
+            editor->styleSetFore(SCE_V_STRINGEOL,       0x808080);
+            editor->styleSetFore(SCE_V_USER,            0x000000);
+            editor->styleSetFore(SCE_V_COMMENT_WORD,    0x008000);
+            editor->styleSetFore(SCE_V_INPUT,           0x000000);
+            editor->styleSetFore(SCE_V_OUTPUT,          0x000000);
+            editor->styleSetFore(SCE_V_INOUT,           0x000000);
+            editor->styleSetFore(SCE_V_PORT_CONNECT,    0x000000);
+        } else if (lexer==SCLEX_VHDL) {
+            editor->setLexer(SCLEX_VHDL);            
+            editor->setKeyWords(0, vhdl_instre1);
+            editor->setKeyWords(1, vhdl_instre2);
+            editor->setKeyWords(2, vhdl_type1);
+            editor->setKeyWords(3, vhdl_type2);
+            editor->setKeyWords(4, vhdl_type3);
+            editor->setKeyWords(5, vhdl_type4);
+            editor->styleSetFore(SCE_VHDL_DEFAULT,          0x000000);
+            editor->styleSetFore(SCE_VHDL_COMMENT,          0x008000);
+            editor->styleSetFore(SCE_VHDL_COMMENTLINEBANG,  0x008000);
+            editor->styleSetFore(SCE_VHDL_NUMBER,           0xFF8000);
+            editor->styleSetFore(SCE_VHDL_STRING,           0x808080);
+            editor->styleSetFore(SCE_VHDL_OPERATOR,         0x000080);
+            editor->styleSetFore(SCE_VHDL_IDENTIFIER,       0x000000);
+            editor->styleSetFore(SCE_VHDL_STRINGEOL,        0x808080);
+            editor->styleSetFore(SCE_VHDL_KEYWORD,          0x8000FF);
+            editor->styleSetFore(SCE_VHDL_STDOPERATOR,      0x8000FF);
+            editor->styleSetFore(SCE_VHDL_ATTRIBUTE,        0x8080FF);
+            editor->styleSetFore(SCE_VHDL_STDFUNCTION,      0x0080FF);
+            editor->styleSetFore(SCE_VHDL_STDPACKAGE,       0x800000);
+            editor->styleSetFore(SCE_VHDL_STDTYPE,          0x8000FF);
+            editor->styleSetFore(SCE_VHDL_USERWORD,         0xB5E71F);
+            editor->styleSetFore(SCE_VHDL_BLOCK_COMMENT,    0x008000);
+        }
     }
     return editor;
 }
@@ -740,7 +800,14 @@ void MainWindow::previewSource(std::string fileName)
     QFile file(fullpath.string().c_str());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
-        ScintillaEdit *editor = openEditorText(contents.constData(), 0);
+        int lexer = 0;
+        if (fullpath.extension()==".v") lexer = SCLEX_VERILOG;
+        if (fullpath.extension()==".sv") lexer = SCLEX_VERILOG;
+        if (fullpath.extension()==".vh") lexer = SCLEX_VERILOG;
+        if (fullpath.extension()==".svh") lexer = SCLEX_VERILOG;
+        if (fullpath.extension()==".vhd") lexer = SCLEX_VHDL;
+        if (fullpath.extension()==".vhdl") lexer = SCLEX_VHDL;
+        ScintillaEdit *editor = openEditorText(contents.constData(), lexer);
 
         centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName.c_str());
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
