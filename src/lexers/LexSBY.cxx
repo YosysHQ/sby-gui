@@ -17,6 +17,10 @@ static void ColouriseSBYDoc(Sci_PositionU startPos, Sci_Position length, int ini
 	StyleContext sc(startPos, length, initStyle, styler);
 	for (; sc.More(); sc.Forward())
 	{
+		if (sc.ch == '\r' || sc.ch == '\n') {
+			sc.SetState(SCE_SBY_DEFAULT);
+			continue;
+		}
 		switch (sc.state)
 		{
 			case SCE_SBY_DEFAULT:
@@ -26,12 +30,10 @@ static void ColouriseSBYDoc(Sci_PositionU startPos, Sci_Position length, int ini
 					sc.SetState(SCE_SBY_SECTION);
 				break;
 			case SCE_SBY_COMMENT:
-				if (sc.ch == '\r' || sc.ch == '\n')
-					sc.SetState(SCE_SBY_DEFAULT);
 				break;
 			case SCE_SBY_SECTION:
 				if (sc.ch == ']')
-					sc.SetState(SCE_SBY_DEFAULT);
+					sc.ForwardSetState(SCE_SBY_DEFAULT);
 				break;
 		}
 	}
