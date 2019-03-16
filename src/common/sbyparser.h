@@ -35,6 +35,7 @@ class SBYParser
     bool parse(boost::filesystem::path path);
     std::vector<std::string> &get_tasks() { return tasklist; }
     std::string get_config_content(std::string task) { return configs[task]; }
+    std::vector<std::string> get_config_files(std::string task);
   private:
     std::string dumpcfg(boost::filesystem::path path, std::string task);
 

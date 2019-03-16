@@ -37,6 +37,7 @@ class QSBYItem : public QGroupBox
     QAction *actionStop;
     QAction *actionEdit;
     QAction *actionLog;
+    QAction *actionFiles;
 
     SBYItem *item;
     QProcess *process;

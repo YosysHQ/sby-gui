@@ -86,3 +86,23 @@ bool SBYParser::parse(boost::filesystem::path path)
         return false;
     }
 }
+
+std::vector<std::string> SBYParser::get_config_files(std::string task)
+{
+    std::vector<std::string> files;
+    std::vector<std::string> lines;
+    boost::split(lines,configs[task],boost::is_any_of("\r\n"));
+    bool filesSection = false;
+    for(auto line : lines)
+    {
+        boost::algorithm::trim(line);
+
+        if (line == "--") filesSection = false;
+        if (boost::algorithm::starts_with(line,"[")) filesSection = false;
+        if (filesSection && !line.empty()) {
+            files.push_back(line);
+        }
+        if (line == "[files]") filesSection = true;        
+    }
+    return files;
+}

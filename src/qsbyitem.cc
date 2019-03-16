@@ -40,6 +40,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     actionStop->setEnabled(false);
     toolBar->addAction(actionStop);
     actionLog = nullptr;
+    actionFiles = nullptr;
     if (item->isTop()) {
         actionEdit = new QAction("Edit", this);
         actionEdit->setIcon(QIcon(":/icons/resources/script_edit.png"));    
@@ -48,6 +49,13 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
            actionLog = new QAction("Log", this);
            actionLog->setIcon(QIcon(":/icons/resources/book.png"));
            actionLog->setEnabled(false);
+           actionFiles = new QAction("Files", this);
+           actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
+           connect(actionFiles, &QAction::triggered, [=]() { 
+                //for (auto file : item->getFiles())
+                    //printf("file:%s\n",file.c_str());
+           });
+           toolBar2->addAction(actionFiles);
            toolBar2->addAction(actionLog);
            toolBar2->addAction(actionEdit);
            statusVisible = true;
@@ -60,6 +68,13 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
         actionLog = new QAction("Log", this);
         actionLog->setIcon(QIcon(":/icons/resources/book.png"));
         actionLog->setEnabled(false);
+        actionFiles = new QAction("Files", this);
+        actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
+        connect(actionFiles, &QAction::triggered, [=]() {
+            //for (auto file : item->getFiles())
+                //printf("file:%s\n",file.c_str());
+        });
+        toolBar2->addAction(actionFiles);
         toolBar2->addAction(actionLog);
         toolBar2->addAction(actionEdit);
         statusVisible = true;

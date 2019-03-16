@@ -61,7 +61,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
     } 
 }
 
-SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent)
+SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content, std::vector<std::string> files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
 {
 }
 
@@ -90,8 +90,11 @@ void SBYFile::parse()
     parser.parse(path.string());
     for (auto task : parser.get_tasks())
     {
-        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task),this));
+        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
         tasksList.insert(QString(task.c_str()));
+    }
+    if (!haveTasks()) {
+        files = parser.get_config_files("");
     }
 }
 
@@ -107,11 +110,14 @@ void SBYFile::refresh()
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
     parser.parse(path.string());
+    if (!haveTasks()) {
+        files = parser.get_config_files("");
+    }
 
     if(!newTasks.isEmpty())
     {
         for(auto name : newTasks) {
-            tasks.push_back(std::make_unique<SBYTask>(path,name.toStdString(), parser.get_config_content(name.toStdString()),this));
+            tasks.push_back(std::make_unique<SBYTask>(path,name.toStdString(), parser.get_config_content(name.toStdString()), parser.get_config_files(name.toStdString()), this));
             tasksList.insert(name);
         }
     }

@@ -71,5 +71,6 @@
         <file>resources/time.png</file>
         <file>resources/delete.png</file>
         <file>resources/question.png</file>
+        <file>resources/page_code.png</file>
     </qresource>
 </RCC>
