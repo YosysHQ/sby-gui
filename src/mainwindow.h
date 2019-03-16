@@ -85,6 +85,7 @@ class MainWindow : public QMainWindow
 
     void directoryChanged(const QString & path);
     void fileChanged(const QString & path);
+    void marginClicked(int position, int modifiers, int margin);
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;

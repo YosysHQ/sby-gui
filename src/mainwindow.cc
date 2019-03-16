@@ -659,11 +659,27 @@ ScintillaEdit *MainWindow::openEditor(int lexer)
 {
     ScintillaEdit *editor = new ScintillaEdit();
     editor->styleSetFont(STYLE_DEFAULT, MonospaceFont());    
-    editor->setMarginWidthN(0, 35);
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
     editor->setUndoCollection(false);
-
+    editor->setProperty("fold", "1");
+    editor->setProperty("fold.compact", "0");
+    editor->setProperty("fold.comment", "1");
+    editor->setProperty("fold.preprocessor", "1");
+    //editor->setWrapMode(true);
+    editor->setMarginWidthN(0, 40); // Line number
+    editor->setMarginWidthN(1, 20); // Foldemargin
+    editor->setMarginMaskN(1, SC_MASK_FOLDERS);
+    editor->setMarginTypeN(1, SC_MARGIN_SYMBOL);
+    editor->setMarginSensitiveN(1, true);
+    editor->markerDefine(SC_MARKNUM_FOLDER, SC_MARK_BOXPLUS);
+    editor->markerDefine(SC_MARKNUM_FOLDEROPEN, SC_MARK_BOXMINUS);
+    editor->markerDefine(SC_MARKNUM_FOLDERSUB, SC_MARK_VLINE);
+    editor->markerDefine(SC_MARKNUM_FOLDERTAIL, SC_MARK_LCORNER);
+    editor->markerDefine(SC_MARKNUM_FOLDEREND, SC_MARK_BOXPLUSCONNECTED);
+    editor->markerDefine(SC_MARKNUM_FOLDEROPENMID, SC_MARK_BOXMINUSCONNECTED);
+    editor->markerDefine(SC_MARKNUM_FOLDERMIDTAIL, SC_MARK_TCORNER);
+    editor->setFoldFlags(16);
     if (lexer!=0)
     {
         if (lexer==SCLEX_SBY) {
@@ -722,7 +738,25 @@ ScintillaEdit *MainWindow::openEditor(int lexer)
             editor->styleSetFore(SCE_VHDL_BLOCK_COMMENT,    0x008000);
         }
     }
+    connect(editor, &ScintillaEdit::marginClicked, this, &MainWindow::marginClicked);
     return editor;
+}
+
+void MainWindow::marginClicked(int position, int modifiers, int margin)
+{
+    QWidget *current = centralTabWidget->widget(centralTabWidget->currentIndex());
+    if (current!=nullptr)
+    {
+        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        {
+            ScintillaEdit *editor = (ScintillaEdit*)current;    
+            
+            if (margin == 1) {
+                int line_number = editor->lineFromPosition(position);
+                editor->toggleFold(line_number);
+            }
+        }
+    }
 }
 
 ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
