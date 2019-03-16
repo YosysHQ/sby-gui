@@ -614,7 +614,8 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
     connect(fileBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
     connect(fileBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
     connect(fileBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
-  
+    connect(fileBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
+
     for (auto const & task : file->getTasks())
     {
         std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName().c_str(), task.get(), fileBox.get(), this);
@@ -625,6 +626,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
         connect(groupBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
         connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
         connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
+        connect(groupBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
         fileBox->layout()->addWidget(groupBox.get());
         items.emplace(std::make_pair(name, std::move(groupBox)));
     }
@@ -725,6 +727,25 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
+void MainWindow::previewSource(std::string fileName)
+{
+    for(int i=0;i<centralTabWidget->count();i++) {
+        if(centralTabWidget->tabText(i) == QString(fileName.c_str())) { 
+            centralTabWidget->setCurrentIndex(i); 
+            return; 
+        } 
+    }
+    boost::filesystem::path fullpath(currentFolder.toStdString());
+    fullpath /= fileName;
+    QFile file(fullpath.string().c_str());
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QByteArray contents = file.readAll();
+        ScintillaEdit *editor = openEditorText(contents.constData(), 0);
+
+        centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName.c_str());
+        centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+    }
+}
 
 void MainWindow::editOpen(std::string path, std::string fileName)
 {

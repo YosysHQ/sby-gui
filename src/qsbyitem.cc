@@ -52,8 +52,8 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
            actionFiles = new QAction("Files", this);
            actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
            connect(actionFiles, &QAction::triggered, [=]() { 
-                //for (auto file : item->getFiles())
-                    //printf("file:%s\n",file.c_str());
+                for (auto file : item->getFiles())
+                    Q_EMIT previewSource(file);
            });
            toolBar2->addAction(actionFiles);
            toolBar2->addAction(actionLog);
@@ -71,8 +71,8 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
         actionFiles = new QAction("Files", this);
         actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
         connect(actionFiles, &QAction::triggered, [=]() {
-            //for (auto file : item->getFiles())
-                //printf("file:%s\n",file.c_str());
+            for (auto file : item->getFiles())
+                Q_EMIT previewSource(file);
         });
         toolBar2->addAction(actionFiles);
         toolBar2->addAction(actionLog);

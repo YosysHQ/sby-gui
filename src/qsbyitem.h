@@ -30,6 +30,7 @@ class QSBYItem : public QGroupBox
     void editOpen(std::string path, std::string fileName);
     void previewOpen(std::string content, std::string fileName, std::string taskName);
     void previewLog(std::string content, std::string fileName, std::string taskName);
+    void previewSource(std::string fileName);
   protected:    
     QProgressBar *progressBar;
     QAction *actionStatus;
