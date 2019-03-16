@@ -33,7 +33,8 @@
 #include <QFile>
 #include <QGraphicsColorizeEffect>
 #include <QMessageBox>
-#include "SciLexer.h"
+#include "lexers/LexSBY.h"
+#include "../src/Catalogue.h"
 #include "ScintillaEdit.h"
 #include <fstream>
 
@@ -129,6 +130,8 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
     initBasenameResource();
     qRegisterMetaType<std::string>();
+    
+    Scintilla::Catalogue::AddLexerModule(&lmSBY);
 
     process = nullptr;
 
@@ -647,6 +650,12 @@ ScintillaEdit *MainWindow::openEditor()
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
     editor->setUndoCollection(false);
+
+    editor->setLexer(SCLEX_SBY);
+    
+    editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
+    editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
+    editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
     return editor;
 }
 
