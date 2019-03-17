@@ -487,7 +487,10 @@ void MainWindow::save_sby(int index)
                     file.close();
                     editor->setSavePoint();                    
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
-                    centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
+                    if (filepath.extension()==".sby") 
+                        centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
+                    else
+                        centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/page_code.png"));
                 }
             }
         }
@@ -842,6 +845,21 @@ void MainWindow::previewSource(std::string fileName)
         if (fullpath.extension()==".vhd") lexer = SCLEX_VHDL;
         if (fullpath.extension()==".vhdl") lexer = SCLEX_VHDL;
         ScintillaEdit *editor = openEditorText(contents.constData(), lexer);
+
+        connect(editor, &ScintillaEdit::modified, [=]() { 
+            for(int i=0;i<centralTabWidget->count();i++) {
+                if(centralTabWidget->tabText(i) == QString(fileName.c_str())) { 
+                    if(editor->modify()) {
+                        centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
+                        centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
+                    } else {
+                        centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
+                        centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/page_code.png"));
+                    }
+                    return; 
+                } 
+            }
+        });
 
         centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName.c_str());
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
