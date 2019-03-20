@@ -2,6 +2,7 @@
 #include <QHBoxLayout>
 #include <QToolBar>
 #include <QGraphicsColorizeEffect>
+#include <QInputDialog>
 
 QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget *parent) : QGroupBox(title, parent), item(item), process(nullptr), shutdown(false), top(top)
 {
@@ -52,8 +53,26 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
            actionFiles = new QAction("Files", this);
            actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
            connect(actionFiles, &QAction::triggered, [=]() { 
-                for (auto file : item->getFiles())
-                    Q_EMIT previewSource(file);
+               auto files = item->getFiles();
+               if (files.size()>1)
+               {
+                QInputDialog qDialog ;
+
+                QStringList items;
+                for (auto file : files)                    
+                    items << QString(file.c_str());
+
+                qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+                qDialog.setComboBoxItems(items);
+                qDialog.setWindowTitle("Choose file(s) to open");
+
+                connect(&qDialog, &QInputDialog::textValueSelected, 
+                        [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
+                qDialog.exec();
+               } else if (files.size()==1)
+               {
+                   previewSource(files[0]);
+               }
            });
            toolBar2->addAction(actionFiles);
            toolBar2->addAction(actionLog);
@@ -67,13 +86,31 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
         actionEdit->setIcon(QIcon(":/icons/resources/script.png"));
         actionLog = new QAction("Log", this);
         actionLog->setIcon(QIcon(":/icons/resources/book.png"));
-        actionLog->setEnabled(false);
+        actionLog->setEnabled(false);        
         actionFiles = new QAction("Files", this);
         actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
-        connect(actionFiles, &QAction::triggered, [=]() {
-            for (auto file : item->getFiles())
-                Q_EMIT previewSource(file);
-        });
+        connect(actionFiles, &QAction::triggered, [=]() { 
+            auto files = item->getFiles();
+            if (files.size()>1)
+            {
+            QInputDialog qDialog ;
+
+            QStringList items;
+            for (auto file : files)                    
+                items << QString(file.c_str());
+
+            qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+            qDialog.setComboBoxItems(items);
+            qDialog.setWindowTitle("Choose file(s) to open");
+
+            connect(&qDialog, &QInputDialog::textValueSelected, 
+                    [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
+            qDialog.exec();
+            } else if (files.size()==1)
+            {
+                previewSource(files[0]);
+            }
+        });        
         toolBar2->addAction(actionFiles);
         toolBar2->addAction(actionLog);
         toolBar2->addAction(actionEdit);
