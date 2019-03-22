@@ -69,6 +69,7 @@ void SBYTask::updateTask()
 {    
     statusColor = 0;
     percentage = 0;
+    vcdFiles.clear();
     boost::filesystem::path dir = path.parent_path().string();
     dir /= (path.stem().string() + "_" + name);
     if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
@@ -157,6 +158,7 @@ void SBYFile::update()
 {
     statusColor = 0;
     percentage = 0;
+    vcdFiles.clear();
     if (!haveTasks()) {
         boost::filesystem::path dir = path.parent_path().string();
         dir /= path.stem();
