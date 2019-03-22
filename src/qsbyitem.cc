@@ -137,6 +137,9 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
 
 QSBYItem::~QSBYItem()
 {
+    if (actionLog) disconnect(actionLog);
+    if (actionFiles) disconnect(actionFiles);
+    if (actionWave) disconnect(actionWave);
     if (process) {
         shutdown = true;
         process->terminate();        
