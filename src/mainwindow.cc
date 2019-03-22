@@ -299,12 +299,17 @@ void MainWindow::fileChanged(const QString & filename)
             QSBYItem *fileBox = items[file->getFileName()].get();
             std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name.toStdString().c_str(), file->getTask(name.toStdString()), fileBox, this);
             std::string newname = groupBox->getName();
+            
             connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
             connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
             connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
             connect(groupBox.get(), &QSBYItem::previewLog, this, &MainWindow::previewLog);
             connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
             connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
+            connect(groupBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
+            connect(groupBox.get(), &QSBYItem::previewVCD, this, &MainWindow::previewVCD);
+
+
             fileBox->layout()->addWidget(groupBox.get());            
             items.emplace(std::make_pair(newname, std::move(groupBox)));
         }
