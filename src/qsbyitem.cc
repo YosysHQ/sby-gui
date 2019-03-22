@@ -161,6 +161,7 @@ void QSBYItem::refreshView()
     progressBar->setGraphicsEffect(effectFile); 
     progressBar->setValue(item->getPercentage());
     if (actionLog) {
+        disconnect(actionLog);
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
             connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName()); });
@@ -169,7 +170,8 @@ void QSBYItem::refreshView()
         }
     }
     if (actionWave) {
-        if (item->getVCDFiles().size()>0) {
+        disconnect(actionWave);
+        if (item->getVCDFiles().size()>0) {            
             actionWave->setEnabled(true);
             connect(actionWave, &QAction::triggered, [=]() { 
                 auto files = item->getVCDFiles();
@@ -201,7 +203,8 @@ void QSBYItem::refreshView()
         }
     }
     if (actionFiles) {
-        if (item->getFiles().size()>0) {
+        disconnect(actionFiles);
+        if (item->getFiles().size()>0) {            
             actionFiles->setEnabled(true);
             connect(actionFiles, &QAction::triggered, [=]() { 
                 auto files = item->getFiles();
