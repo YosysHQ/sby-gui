@@ -131,15 +131,64 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     vbox->addWidget(dummyItem);
     vbox->addWidget(dummyItem2);
 
-    refreshView();
+    if (actionLog) {
+        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
+    }
+    if (actionWave) {
+        connect(actionWave, &QAction::triggered, [=]() { 
+            auto files = item->getVCDFiles();
+            if (files.size()>1) {
+                QInputDialog qDialog;
 
+                QStringList items;
+                for (auto file : files)                    
+                    items << QString(file.filename().string().c_str());
+
+                qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+                qDialog.setComboBoxItems(items);
+                qDialog.setWindowTitle("Choose VCD to open");
+                qDialog.setLabelText("Select file :");
+
+                connect(&qDialog, &QInputDialog::textValueSelected, 
+                        [=](const QString &f) { 
+                            for (auto file : files)                    
+                                if (file.filename().string()==f.toStdString())
+                                    Q_EMIT previewVCD(file.string()); 
+                });
+                qDialog.exec();
+            } else if (files.size()==1) {
+                Q_EMIT previewVCD(files[0].string());
+            }
+        });    
+    }
+    if (actionFiles) {
+        connect(actionFiles, &QAction::triggered, [=]() { 
+            auto files = item->getFiles();
+            if (files.size()>1) {
+                QInputDialog qDialog;
+
+                QStringList items;
+                for (auto file : files)                    
+                    items << QString(file.c_str());
+
+                qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+                qDialog.setComboBoxItems(items);
+                qDialog.setWindowTitle("Choose file to open");
+                qDialog.setLabelText("Select file :");
+
+                connect(&qDialog, &QInputDialog::textValueSelected, 
+                        [=](const QString &file) { Q_EMIT previewSource(file.toStdString(), false); });
+                qDialog.exec();
+            } else if (files.size()==1) {
+                Q_EMIT previewSource(files[0], false);
+            }
+        });    
+    }
+    refreshView();
 }
 
 QSBYItem::~QSBYItem()
 {
-    if (actionLog) disconnect(actionLog);
-    if (actionFiles) disconnect(actionFiles);
-    if (actionWave) disconnect(actionWave);
     if (process) {
         shutdown = true;
         process->terminate();        
@@ -166,73 +215,23 @@ void QSBYItem::refreshView()
 
     Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), true);
     if (actionLog) {
-        disconnect(actionLog);
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
             Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), true);
-            connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
         } else {
             actionLog->setEnabled(false);            
         }
     }
     if (actionWave) {
-        disconnect(actionWave);
         if (item->getVCDFiles().size()>0) {            
             actionWave->setEnabled(true);
-            connect(actionWave, &QAction::triggered, [=]() { 
-                auto files = item->getVCDFiles();
-                if (files.size()>1) {
-                    QInputDialog qDialog;
-
-                    QStringList items;
-                    for (auto file : files)                    
-                        items << QString(file.filename().string().c_str());
-
-                    qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
-                    qDialog.setComboBoxItems(items);
-                    qDialog.setWindowTitle("Choose VCD to open");
-                    qDialog.setLabelText("Select file :");
-
-                    connect(&qDialog, &QInputDialog::textValueSelected, 
-                            [=](const QString &f) { 
-                                for (auto file : files)                    
-                                    if (file.filename().string()==f.toStdString())
-                                        Q_EMIT previewVCD(file.string()); 
-                    });
-                    qDialog.exec();
-                } else if (files.size()==1) {
-                    Q_EMIT previewVCD(files[0].string());
-                }
-            });    
         } else {
             actionWave->setEnabled(false);            
         }
     }
     if (actionFiles) {
-        disconnect(actionFiles);
         if (item->getFiles().size()>0) {            
             actionFiles->setEnabled(true);
-            connect(actionFiles, &QAction::triggered, [=]() { 
-                auto files = item->getFiles();
-                if (files.size()>1) {
-                    QInputDialog qDialog;
-
-                    QStringList items;
-                    for (auto file : files)                    
-                        items << QString(file.c_str());
-
-                    qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
-                    qDialog.setComboBoxItems(items);
-                    qDialog.setWindowTitle("Choose file to open");
-                    qDialog.setLabelText("Select file :");
-
-                    connect(&qDialog, &QInputDialog::textValueSelected, 
-                            [=](const QString &file) { Q_EMIT previewSource(file.toStdString(), false); });
-                    qDialog.exec();
-                } else if (files.size()==1) {
-                    Q_EMIT previewSource(files[0], false);
-                }
-            });    
         } else {
             actionFiles->setEnabled(false);            
         }
