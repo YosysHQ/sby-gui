@@ -299,7 +299,7 @@ void MainWindow::fileChanged(const QString & filename)
             QSBYItem *fileBox = items[file->getFileName()].get();
             std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name.toStdString().c_str(), file->getTask(name.toStdString()), fileBox, this);
             std::string newname = groupBox->getName();
-            
+
             connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
             connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
             connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
@@ -793,16 +793,33 @@ ScintillaEdit *MainWindow::openEditorText(std::string text, int lexer)
     return editor;
 }
 
-void MainWindow::previewOpen(std::string content, std::string fileName, std::string taskName)
+void MainWindow::previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly)
 {
     std::string name = fileName + "#" + taskName;
  
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
             centralTabWidget->setCurrentIndex(i); 
-            return; 
-        } 
+            if (reloadOnly) {
+                QWidget *current = centralTabWidget->widget(i);
+                if (current!=nullptr)
+                {
+                    if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+                    {
+                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        editor->setReadOnly(false);
+                        editor->setText(content.c_str());
+                        editor->setUndoCollection(true);
+                        editor->setSavePoint();
+                        editor->gotoPos(0);
+                        editor->setReadOnly(true);
+                    } 
+                }
+            }
+            return;
+        }
     }
+    if (reloadOnly) return;
 
     ScintillaEdit *editor = openEditorText(content, SCLEX_SBY);
     editor->setReadOnly(true);
@@ -811,7 +828,7 @@ void MainWindow::previewOpen(std::string content, std::string fileName, std::str
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::previewLog(std::string content, std::string fileName, std::string taskName)
+void MainWindow::previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly)
 {
     std::string name = fileName;
     if (!taskName.empty()) name+= "#" + taskName;
@@ -820,9 +837,26 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
             centralTabWidget->setCurrentIndex(i); 
+            if (reloadOnly) {
+                QWidget *current = centralTabWidget->widget(i);
+                if (current!=nullptr)
+                {
+                    if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+                    {
+                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        editor->setReadOnly(false);
+                        editor->setText(content.c_str());
+                        editor->setUndoCollection(true);
+                        editor->setSavePoint();
+                        editor->gotoPos(0);
+                        editor->setReadOnly(true);
+                    } 
+                }
+            }            
             return; 
         } 
     }
+    if (reloadOnly) return;
 
     ScintillaEdit *editor = openEditorText(content, 0);
     editor->setReadOnly(true);
@@ -831,7 +865,7 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::previewSource(std::string fileName)
+void MainWindow::previewSource(std::string fileName, bool reloadOnly)
 {
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == QString(fileName.c_str())) { 
@@ -839,6 +873,8 @@ void MainWindow::previewSource(std::string fileName)
             return; 
         } 
     }
+    if (reloadOnly) return;
+
     boost::filesystem::path fullpath(currentFolder.toStdString());
     fullpath /= fileName;
     QFile file(fullpath.string().c_str());

@@ -60,9 +60,9 @@ class MainWindow : public QMainWindow
     void openLocation(QString path);
     void removeLayoutItems(QLayout* layout);
     void editOpen(std::string path, std::string fileName);
-    void previewOpen(std::string content, std::string fileName, std::string taskName);
-    void previewLog(std::string content, std::string fileName, std::string taskName);
-    void previewSource(std::string fileName);
+    void previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
+    void previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
+    void previewSource(std::string fileName, bool reloadOnly);
     void previewVCD(std::string fileName);
     ScintillaEdit *openEditor(int lexer);
     ScintillaEdit *openEditorFile(std::string fullpath);

@@ -109,7 +109,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     if (item->isTop()) {    
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT editOpen(item->getFullPath(), item->getFileName()); });  
     } else {
-        connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName()); });
+        connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), false); });
     }
 
     actionStatus = nullptr;
@@ -163,11 +163,14 @@ void QSBYItem::refreshView()
     }
     progressBar->setGraphicsEffect(effectFile); 
     progressBar->setValue(item->getPercentage());
+
+    Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), true);
     if (actionLog) {
         disconnect(actionLog);
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
-            connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName()); });
+            Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), true);
+            connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
         } else {
             actionLog->setEnabled(false);            
         }
@@ -224,10 +227,10 @@ void QSBYItem::refreshView()
                     qDialog.setLabelText("Select file :");
 
                     connect(&qDialog, &QInputDialog::textValueSelected, 
-                            [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
+                            [=](const QString &file) { Q_EMIT previewSource(file.toStdString(), false); });
                     qDialog.exec();
                 } else if (files.size()==1) {
-                    Q_EMIT previewSource(files[0]);
+                    Q_EMIT previewSource(files[0], false);
                 }
             });    
         } else {

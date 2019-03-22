@@ -28,9 +28,9 @@ class QSBYItem : public QGroupBox
     void taskExecuted();
     void startTask(std::string name);
     void editOpen(std::string path, std::string fileName);
-    void previewOpen(std::string content, std::string fileName, std::string taskName);
-    void previewLog(std::string content, std::string fileName, std::string taskName);
-    void previewSource(std::string fileName);
+    void previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
+    void previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
+    void previewSource(std::string fileName, bool reloadOnly);
     void previewVCD(std::string fileName);
   protected:    
     QProgressBar *progressBar;
