@@ -72,5 +72,6 @@
         <file>resources/delete.png</file>
         <file>resources/question.png</file>
         <file>resources/page_code.png</file>
+        <file>resources/gtkwave.png</file>
     </qresource>
 </RCC>

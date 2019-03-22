@@ -73,6 +73,17 @@ void SBYTask::updateTask()
     dir /= (path.stem().string() + "_" + name);
     if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
         updateFromXML(dir / (path.stem().string() + "_" + name));
+        boost::filesystem::path engine_0 = dir / "engine_0";
+        if (boost::filesystem::is_directory(engine_0) && boost::filesystem::exists(engine_0)) {
+            boost::filesystem::directory_iterator it(engine_0);
+            boost::filesystem::directory_iterator endit;
+            while (it != endit) {
+                if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".vcd") {
+                    vcdFiles.push_back(it->path());
+                }
+                ++it;
+            }
+        }
     }
 }
 
@@ -151,6 +162,18 @@ void SBYFile::update()
         dir /= path.stem();
         if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
             updateFromXML(dir / path.stem());
+            
+            boost::filesystem::path engine_0 = dir / "engine_0";
+            if (boost::filesystem::is_directory(engine_0) && boost::filesystem::exists(engine_0)) {
+                boost::filesystem::directory_iterator it(engine_0);
+                boost::filesystem::directory_iterator endit;
+                while (it != endit) {
+                    if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".vcd") {
+                        vcdFiles.push_back(it->path());
+                    }
+                    ++it;
+                }
+            }
         }        
     }
     else // have tasks

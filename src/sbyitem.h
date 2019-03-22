@@ -29,6 +29,7 @@ public:
     virtual std::string getTaskName() = 0;
     virtual std::string getContents() = 0;
     virtual std::vector<std::string> &getFiles() = 0;
+    virtual std::vector<boost::filesystem::path> &getVCDFiles() = 0;
 protected:
     std::string name;
     boost::filesystem::path path;
@@ -50,10 +51,12 @@ public:
     std::string getTaskName() override { return name; }
     std::string getContents() override { return content; };
     std::vector<std::string> &getFiles() override { return files; }
+    std::vector<boost::filesystem::path> &getVCDFiles() override { return vcdFiles; }
 private:
     std::string content;    
     SBYFile *parent;
     std::vector<std::string> files;
+    std::vector<boost::filesystem::path> vcdFiles;
 };
 
 class SBYFile : public SBYItem  {
@@ -67,6 +70,7 @@ public:
     std::string getTaskName() override { return ""; }
     std::string getContents() override { return ""; };
     std::vector<std::string> &getFiles() override { return files; }
+    std::vector<boost::filesystem::path> &getVCDFiles() override { return vcdFiles; }
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
     SBYTask *getTask(std::string name);
     QSet<QString> &getTasksList() { return tasksList; }
@@ -75,5 +79,6 @@ private:
     std::vector<std::unique_ptr<SBYTask>> tasks;
     QSet<QString> tasksList;
     std::vector<std::string> files;
+    std::vector<boost::filesystem::path> vcdFiles;
 };
 #endif // SBYITEM_H

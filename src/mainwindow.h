@@ -63,6 +63,7 @@ class MainWindow : public QMainWindow
     void previewOpen(std::string content, std::string fileName, std::string taskName);
     void previewLog(std::string content, std::string fileName, std::string taskName);
     void previewSource(std::string fileName);
+    void previewVCD(std::string fileName);
     ScintillaEdit *openEditor(int lexer);
     ScintillaEdit *openEditorFile(std::string fullpath);
     ScintillaEdit *openEditorText(std::string text, int lexer);

@@ -42,6 +42,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     toolBar->addAction(actionStop);
     actionLog = nullptr;
     actionFiles = nullptr;
+    actionWave = nullptr;
     if (item->isTop()) {
         actionEdit = new QAction("Edit", this);
         actionEdit->setIcon(QIcon(":/icons/resources/script_edit.png"));    
@@ -52,28 +53,11 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
            actionLog->setEnabled(false);
            actionFiles = new QAction("Files", this);
            actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
-           connect(actionFiles, &QAction::triggered, [=]() { 
-               auto files = item->getFiles();
-               if (files.size()>1)
-               {
-                QInputDialog qDialog ;
-
-                QStringList items;
-                for (auto file : files)                    
-                    items << QString(file.c_str());
-
-                qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
-                qDialog.setComboBoxItems(items);
-                qDialog.setWindowTitle("Choose file(s) to open");
-
-                connect(&qDialog, &QInputDialog::textValueSelected, 
-                        [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
-                qDialog.exec();
-               } else if (files.size()==1)
-               {
-                   previewSource(files[0]);
-               }
-           });
+           actionFiles->setEnabled(false);
+           actionWave = new QAction("Wave", this);
+           actionWave->setIcon(QIcon(":/icons/resources/gtkwave.png"));
+           actionWave->setEnabled(false);
+           toolBar2->addAction(actionWave);
            toolBar2->addAction(actionFiles);
            toolBar2->addAction(actionLog);
            toolBar2->addAction(actionEdit);
@@ -89,28 +73,11 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
         actionLog->setEnabled(false);        
         actionFiles = new QAction("Files", this);
         actionFiles->setIcon(QIcon(":/icons/resources/page_code.png"));
-        connect(actionFiles, &QAction::triggered, [=]() { 
-            auto files = item->getFiles();
-            if (files.size()>1)
-            {
-            QInputDialog qDialog ;
-
-            QStringList items;
-            for (auto file : files)                    
-                items << QString(file.c_str());
-
-            qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
-            qDialog.setComboBoxItems(items);
-            qDialog.setWindowTitle("Choose file(s) to open");
-
-            connect(&qDialog, &QInputDialog::textValueSelected, 
-                    [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
-            qDialog.exec();
-            } else if (files.size()==1)
-            {
-                previewSource(files[0]);
-            }
-        });        
+        actionFiles->setEnabled(false);
+        actionWave = new QAction("Wave", this);
+        actionWave->setIcon(QIcon(":/icons/resources/gtkwave.png"));
+        actionWave->setEnabled(false);
+        toolBar2->addAction(actionWave);
         toolBar2->addAction(actionFiles);
         toolBar2->addAction(actionLog);
         toolBar2->addAction(actionEdit);
@@ -199,6 +166,66 @@ void QSBYItem::refreshView()
             connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName()); });
         } else {
             actionLog->setEnabled(false);            
+        }
+    }
+    if (actionWave) {
+        if (item->getVCDFiles().size()>0) {
+            actionWave->setEnabled(true);
+            connect(actionWave, &QAction::triggered, [=]() { 
+                auto files = item->getVCDFiles();
+                if (files.size()>1) {
+                    QInputDialog qDialog;
+
+                    QStringList items;
+                    for (auto file : files)                    
+                        items << QString(file.filename().string().c_str());
+
+                    qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+                    qDialog.setComboBoxItems(items);
+                    qDialog.setWindowTitle("Choose VCD to open");
+                    qDialog.setLabelText("Select file :");
+
+                    connect(&qDialog, &QInputDialog::textValueSelected, 
+                            [=](const QString &f) { 
+                                for (auto file : files)                    
+                                    if (file.filename().string()==f.toStdString())
+                                        Q_EMIT previewVCD(file.string()); 
+                    });
+                    qDialog.exec();
+                } else if (files.size()==1) {
+                    Q_EMIT previewVCD(files[0].string());
+                }
+            });    
+        } else {
+            actionWave->setEnabled(false);            
+        }
+    }
+    if (actionFiles) {
+        if (item->getFiles().size()>0) {
+            actionFiles->setEnabled(true);
+            connect(actionFiles, &QAction::triggered, [=]() { 
+                auto files = item->getFiles();
+                if (files.size()>1) {
+                    QInputDialog qDialog;
+
+                    QStringList items;
+                    for (auto file : files)                    
+                        items << QString(file.c_str());
+
+                    qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
+                    qDialog.setComboBoxItems(items);
+                    qDialog.setWindowTitle("Choose file to open");
+                    qDialog.setLabelText("Select file :");
+
+                    connect(&qDialog, &QInputDialog::textValueSelected, 
+                            [=](const QString &file) { Q_EMIT previewSource(file.toStdString()); });
+                    qDialog.exec();
+                } else if (files.size()==1) {
+                    Q_EMIT previewSource(files[0]);
+                }
+            });    
+        } else {
+            actionFiles->setEnabled(false);            
         }
     }
     if (actionStatus!=nullptr)

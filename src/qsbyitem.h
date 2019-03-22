@@ -31,6 +31,7 @@ class QSBYItem : public QGroupBox
     void previewOpen(std::string content, std::string fileName, std::string taskName);
     void previewLog(std::string content, std::string fileName, std::string taskName);
     void previewSource(std::string fileName);
+    void previewVCD(std::string fileName);
   protected:    
     QProgressBar *progressBar;
     QAction *actionStatus;
@@ -39,6 +40,7 @@ class QSBYItem : public QGroupBox
     QAction *actionEdit;
     QAction *actionLog;
     QAction *actionFiles;
+    QAction *actionWave;
 
     SBYItem *item;
     QProcess *process;

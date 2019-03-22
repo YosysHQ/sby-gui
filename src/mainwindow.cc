@@ -619,6 +619,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
     connect(fileBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
     connect(fileBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
     connect(fileBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
+    connect(fileBox.get(), &QSBYItem::previewVCD, this, &MainWindow::previewVCD);
 
     for (auto const & task : file->getTasks())
     {
@@ -631,6 +632,7 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
         connect(groupBox.get(), &QSBYItem::taskExecuted, this, &MainWindow::taskExecuted);
         connect(groupBox.get(), &QSBYItem::startTask, this, &MainWindow::startTask);
         connect(groupBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
+        connect(groupBox.get(), &QSBYItem::previewVCD, this, &MainWindow::previewVCD);
         fileBox->layout()->addWidget(groupBox.get());
         items.emplace(std::make_pair(name, std::move(groupBox)));
     }
@@ -864,6 +866,11 @@ void MainWindow::previewSource(std::string fileName)
         centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName.c_str());
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
     }
+}
+
+void MainWindow::previewVCD(std::string fileName)
+{
+    QProcess::startDetached(("gtkwave "+ fileName).c_str());
 }
 
 void MainWindow::editOpen(std::string path, std::string fileName)
