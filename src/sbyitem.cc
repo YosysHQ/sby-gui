@@ -3,7 +3,7 @@
 #include <QDomDocument>
 #include <QFile>
 
-SBYItem::SBYItem(boost::filesystem::path path, QString name) : path(path), name(name), timeSpent(boost::none), previousLog(boost::none)
+SBYItem::SBYItem(boost::filesystem::path path, QString name) : path(path), name(name), timeSpent(nothing()), previousLog(nothing())
 {
 
 }
@@ -11,8 +11,8 @@ SBYItem::SBYItem(boost::filesystem::path path, QString name) : path(path), name(
 void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
 {
     xmlFile.replace_extension("xml");
-    timeSpent = boost::none;
-    previousLog = boost::none;
+    timeSpent = nothing();
+    previousLog = nothing();
     int errors = 0;
     int failures = 0;
     statusColor = 0;
@@ -39,7 +39,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
             QDomElement testcase = testcaseList.at(0).toElement();
             if (testcase.hasAttribute("time"))
             {
-                timeSpent = boost::lexical_cast<int>(testcase.attribute("time").toStdString());
+                timeSpent = timeSpent.just(boost::lexical_cast<int>(testcase.attribute("time").toStdString()));
             }
             if (testcase.hasAttribute("status"))
             {
@@ -56,7 +56,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
         QDomNodeList systemOutList = xml.elementsByTagName("system-out");
         if (!systemOutList.isEmpty()) {
             QDomElement systemOut = systemOutList.at(0).toElement();
-            previousLog = systemOut.text();
+            previousLog = previousLog.just(systemOut.text());
         }
     } 
 }

@@ -3,10 +3,11 @@
 
 #include <QSet>
 #include <QString>
+#include "Maybe.h"
 #include <string>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
-#include <boost/optional.hpp>
+
 #include "sbyparser.h"
 
 class SBYItem {
@@ -20,8 +21,8 @@ public:
     int getStatusColor() { return statusColor; }
     QString getStatus() { return status; }
     int getPercentage() { return percentage; }
-    boost::optional<int> getTimeSpent() { return timeSpent; }
-    boost::optional<QString> getPreviousLog() { return previousLog; }
+    Maybe<int> &getTimeSpent() { return timeSpent; }
+    Maybe<QString> &getPreviousLog() { return previousLog; }
 
     void updateFromXML(boost::filesystem::path path);
     virtual void update() = 0;
@@ -36,8 +37,8 @@ protected:
     int statusColor;
     QString status;
     int percentage;
-    boost::optional<int> timeSpent;
-    boost::optional<QString> previousLog;
+    Maybe<int> timeSpent;
+    Maybe<QString> previousLog;
 };
 
 class SBYFile;

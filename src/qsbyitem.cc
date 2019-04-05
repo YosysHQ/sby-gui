@@ -132,7 +132,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     vbox->addWidget(dummyItem2);
 
     if (actionLog) {
-        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
+        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().value(), item->getFileName(), item->getTaskName(), false); });
     }
     if (actionWave) {
         connect(actionWave, &QAction::triggered, [=]() { 
@@ -212,7 +212,7 @@ void QSBYItem::refreshView()
     if (actionLog) {
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
-            Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), true);
+            Q_EMIT previewLog(item->getPreviousLog().value(), item->getFileName(), item->getTaskName(), true);
         } else {
             actionLog->setEnabled(false);            
         }
@@ -253,7 +253,7 @@ void QSBYItem::refreshView()
     }
     QString time = "Last run: ";
     if (item->getTimeSpent())
-        time += QString::number(item->getTimeSpent().get()) + " sec";
+        time += QString::number(item->getTimeSpent().value()) + " sec";
     else
         time += "??? sec";    
     label->setText(time);
