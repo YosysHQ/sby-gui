@@ -23,8 +23,6 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include "common.h"
-#include "log.h"
 
 #include <QProcess>
 
