@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include "mainwindow.h"
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#include <boost/filesystem.hpp>
 
 int main(int argc, char *argv[])
 {

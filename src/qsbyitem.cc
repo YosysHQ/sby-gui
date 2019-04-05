@@ -132,7 +132,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     vbox->addWidget(dummyItem2);
 
     if (actionLog) {
-        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
+        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get().c_str(), item->getFileName(), item->getTaskName(), false); });
     }
     if (actionWave) {
         connect(actionWave, &QAction::triggered, [=]() { 
@@ -153,11 +153,11 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
                         [=](const QString &f) { 
                             for (auto file : files)                    
                                 if (file.filename().string()==f.toStdString())
-                                    Q_EMIT previewVCD(file.string()); 
+                                    Q_EMIT previewVCD(file.string().c_str()); 
                 });
                 qDialog.exec();
             } else if (files.size()==1) {
-                Q_EMIT previewVCD(files[0].string());
+                Q_EMIT previewVCD(files[0].string().c_str());
             }
         });    
     }
@@ -177,10 +177,10 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
                 qDialog.setLabelText("Select file :");
 
                 connect(&qDialog, &QInputDialog::textValueSelected, 
-                        [=](const QString &file) { Q_EMIT previewSource(file.toStdString(), false); });
+                        [=](const QString &file) { Q_EMIT previewSource(file.toStdString().c_str(), false); });
                 qDialog.exec();
             } else if (files.size()==1) {
-                Q_EMIT previewSource(files[0], false);
+                Q_EMIT previewSource(files[0].c_str(), false);
             }
         });    
     }
@@ -217,7 +217,7 @@ void QSBYItem::refreshView()
     if (actionLog) {
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
-            Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), true);
+            Q_EMIT previewLog(item->getPreviousLog().get().c_str(), item->getFileName(), item->getTaskName(), true);
         } else {
             actionLog->setEnabled(false);            
         }
@@ -238,7 +238,7 @@ void QSBYItem::refreshView()
     }
     if (actionStatus!=nullptr)
     {
-        std::string status = item->getStatus();
+        QString status = item->getStatus();
         if (status=="PASS") {
             actionStatus->setIcon(QIcon(":/icons/resources/accept.png")); 
             actionStatus->setText("Pass");
@@ -273,9 +273,9 @@ void QSBYItem::runSBYTask()
     process = new QProcess;
     QStringList args;
     args << "-f";
-    args << item->getFileName().c_str();
+    args << item->getFileName();
     if (!item->isTop()) { 
-        args << item->getTaskName().c_str();
+        args << item->getTaskName();
     }
     process->setProgram("sby");
     process->setArguments(args);
@@ -283,7 +283,7 @@ void QSBYItem::runSBYTask()
     //env.insert("YOSYS_NOVERIFIC","1");
     env.insert("PYTHONUNBUFFERED","1");
     process->setProcessEnvironment(env);
-    process->setWorkingDirectory(item->getWorkFolder().c_str());
+    process->setWorkingDirectory(item->getWorkFolder());
     process->setProcessChannelMode(QProcess::MergedChannels);  
     connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(printOutput()));
     connect(process, &QProcess::stateChanged, [=](QProcess::ProcessState newState) { 
@@ -326,7 +326,7 @@ void QSBYItem::stopProcess()
         process->terminate();
 }
 
-std::string QSBYItem::getName()
+QString QSBYItem::getName()
 {
     if (item->isTop())
         return item->getFileName();

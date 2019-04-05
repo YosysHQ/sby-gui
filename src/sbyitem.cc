@@ -3,7 +3,7 @@
 #include <QDomDocument>
 #include <QFile>
 
-SBYItem::SBYItem(boost::filesystem::path path, std::string name) : path(path), name(name), timeSpent(boost::none), previousLog(boost::none)
+SBYItem::SBYItem(boost::filesystem::path path, QString name) : path(path), name(name), timeSpent(boost::none), previousLog(boost::none)
 {
 
 }
@@ -44,7 +44,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
             if (testcase.hasAttribute("status"))
             {
                 percentage = 100;                
-                status = testcase.attribute("status").toStdString();
+                status = testcase.attribute("status");
                 if (errors==0 && failures==0) {
                     statusColor = 1;                     
                 }
@@ -61,7 +61,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
     } 
 }
 
-SBYTask::SBYTask(boost::filesystem::path path, std::string name, std::string content, std::vector<std::string> files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
+SBYTask::SBYTask(boost::filesystem::path path, QString name, QString content, std::vector<std::string> files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
 {
 }
 
@@ -71,9 +71,9 @@ void SBYTask::updateTask()
     percentage = 0;
     vcdFiles.clear();
     boost::filesystem::path dir = path.parent_path().string();
-    dir /= (path.stem().string() + "_" + name);
+    dir /= (path.stem().string() + "_" + name.toStdString());
     if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-        updateFromXML(dir / (path.stem().string() + "_" + name));
+        updateFromXML(dir / (path.stem().string() + "_" + name.toStdString()));
         boost::filesystem::path engine_0 = dir / "engine_0";
         if (boost::filesystem::is_directory(engine_0) && boost::filesystem::exists(engine_0)) {
             boost::filesystem::directory_iterator it(engine_0);
@@ -93,7 +93,7 @@ void SBYTask::update()
     parent->update();    
 }
 
-SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().string())
+SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().string().c_str())
 {
 }
 
@@ -102,7 +102,7 @@ void SBYFile::parse()
     parser.parse(path.string());
     for (auto task : parser.get_tasks())
     {
-        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
+        tasks.push_back(std::make_unique<SBYTask>(path,task.c_str(), parser.get_config_content(task).c_str(), parser.get_config_files(task), this));
         tasksList.insert(QString(task.c_str()));
     }
     if (!haveTasks()) {
@@ -129,7 +129,7 @@ void SBYFile::refresh()
     if(!newTasks.isEmpty())
     {
         for(auto name : newTasks) {
-            tasks.push_back(std::make_unique<SBYTask>(path,name.toStdString(), parser.get_config_content(name.toStdString()), parser.get_config_files(name.toStdString()), this));
+            tasks.push_back(std::make_unique<SBYTask>(path,name, parser.get_config_content(name.toStdString()).c_str(), parser.get_config_files(name.toStdString()), this));
             tasksList.insert(name);
         }
     }
@@ -138,7 +138,7 @@ void SBYFile::refresh()
         for(auto name : deletedTasks) {
             auto it = tasks.begin();
             while(it != tasks.end()) {
-                if (it->get()->getTaskName() == name.toStdString()) {
+                if (it->get()->getTaskName() == name) {
                     tasks.erase(it);
                 }
                 else ++it;
@@ -202,7 +202,7 @@ void SBYFile::update()
     }
 }
 
-SBYTask *SBYFile::getTask(std::string name)
+SBYTask *SBYFile::getTask(QString name)
 {
     for(auto& task : tasks) {
         if (task->getTaskName() == name) 

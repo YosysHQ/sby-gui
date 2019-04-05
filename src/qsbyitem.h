@@ -18,7 +18,7 @@ class QSBYItem : public QGroupBox
     virtual ~QSBYItem();
     void runSBYTask();
     void refreshView();
-    std::string getName();
+    QString getName();
     void stopProcess();
     QSBYItem* getParent() { return top; }
   protected Q_SLOTS:
@@ -26,12 +26,12 @@ class QSBYItem : public QGroupBox
   Q_SIGNALS:
     void appendLog(QString content);
     void taskExecuted();
-    void startTask(std::string name);
-    void editOpen(std::string path, std::string fileName);
-    void previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
-    void previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
-    void previewSource(std::string fileName, bool reloadOnly);
-    void previewVCD(std::string fileName);
+    void startTask(QString name);
+    void editOpen(QString path, QString fileName);
+    void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
+    void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
+    void previewSource(QString fileName, bool reloadOnly);
+    void previewVCD(QString fileName);
   protected:    
     QProgressBar *progressBar;
     QAction *actionStatus;

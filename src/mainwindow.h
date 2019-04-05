@@ -59,14 +59,14 @@ class MainWindow : public QMainWindow
 
     void openLocation(QString path);
     void removeLayoutItems(QLayout* layout);
-    void editOpen(std::string path, std::string fileName);
-    void previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
-    void previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly);
-    void previewSource(std::string fileName, bool reloadOnly);
-    void previewVCD(std::string fileName);
+    void editOpen(QString path, QString fileName);
+    void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
+    void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
+    void previewSource(QString fileName, bool reloadOnly);
+    void previewVCD(QString fileName);
     ScintillaEdit *openEditor(int lexer);
-    ScintillaEdit *openEditorFile(std::string fullpath);
-    ScintillaEdit *openEditorText(std::string text, int lexer);
+    ScintillaEdit *openEditorFile(QString fullpath);
+    ScintillaEdit *openEditorText(QString text, int lexer);
     void refreshView();
     void appendLog(QString logline);
     void showTime();
@@ -76,7 +76,7 @@ class MainWindow : public QMainWindow
     QStringList getFileList(QString path);
   protected Q_SLOTS:
     void taskExecuted();
-    void startTask(std::string name);
+    void startTask(QString name);
 
     void open_folder();
     void save_file();
@@ -128,9 +128,9 @@ class MainWindow : public QMainWindow
 
     QStringList currentFileList;
     std::vector<std::unique_ptr<SBYFile>> files;
-    std::map<std::string, SBYFile*> fileMap;
-    std::map<std::string, std::unique_ptr<QSBYItem>> items;
-    std::deque<std::string> taskList;
+    std::map<QString, SBYFile*> fileMap;
+    std::map<QString, std::unique_ptr<QSBYItem>> items;
+    std::deque<QString> taskList;
 };
 
 #endif // MAINWINDOW_H

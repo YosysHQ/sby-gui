@@ -118,7 +118,7 @@ void MainWindow::openLocation(QString path)
         f->parse();
         f->update();
         files.push_back(std::move(f));
-        fileMap.emplace(std::make_pair(file.string(), files.back().get()));
+        fileMap.emplace(std::make_pair(file.string().c_str(), files.back().get()));
     }
 
     for(const auto & file : files) {
@@ -230,7 +230,7 @@ void MainWindow::directoryChanged(const QString & path)
             f->parse();
             f->update();
             files.push_back(std::move(f));
-            fileMap.emplace(std::make_pair(filename.toStdString(), files.back().get()));
+            fileMap.emplace(std::make_pair(filename, files.back().get()));
 
             grid->addWidget(generateFileBox(files.back().get()), (int)files.size(), 0);
         }
@@ -240,10 +240,10 @@ void MainWindow::directoryChanged(const QString & path)
         for(auto name : deleteList) {
             QString filename = QDir(currentFolder).filePath(name);
             fileWatcher->removePath(filename);
-            SBYFile *file = fileMap[filename.toStdString()];
+            SBYFile *file = fileMap[filename];
             for (auto const & task : file->getTasks())
             {
-                std::string name = file->getName() + "#" + task->getName();
+                QString name = file->getName() + "#" + task->getName();
                 auto it = items.find(name);
                 if (it!=items.end()) {
                     items.erase(it);
@@ -255,7 +255,7 @@ void MainWindow::directoryChanged(const QString & path)
             }
             auto itFile = files.begin();
             while(itFile != files.end()) {
-                if (itFile->get()->getFullPath() == filename.toStdString()) {
+                if (itFile->get()->getFullPath() == filename) {
                     files.erase(itFile);
                 }
                 else ++itFile;
@@ -267,8 +267,8 @@ void MainWindow::directoryChanged(const QString & path)
 
 void MainWindow::fileChanged(const QString & filename)
 {
-    SBYFile *file = fileMap[filename.toStdString()];
-    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString().c_str()));
+    SBYFile *file = fileMap[filename];
+    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString()));
     f->parse();
     f->update();
     QSet<QString> newTaskSet = f->getTasksList(); 
@@ -279,7 +279,7 @@ void MainWindow::fileChanged(const QString & filename)
     if(!deletedTasks.isEmpty())
     {
         for(auto name : deletedTasks) {
-            std::string n = file->getFileName() + "#" + name.toStdString();
+            QString n = file->getFileName() + "#" + name;
             auto it = items.begin();
             while(it != items.end()) {
                 if (it->second->getName() == n) {
@@ -297,8 +297,8 @@ void MainWindow::fileChanged(const QString & filename)
     {
         for(auto name : newTasks) {
             QSBYItem *fileBox = items[file->getFileName()].get();
-            std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name.toStdString().c_str(), file->getTask(name.toStdString()), fileBox, this);
-            std::string newname = groupBox->getName();
+            std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name, file->getTask(name), fileBox, this);
+            QString newname = groupBox->getName();
 
             connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
             connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
@@ -465,7 +465,7 @@ void MainWindow::createMenusAndBars()
     });   
     connect(actionStop, &QAction::triggered, [=]() { 
         if (taskList.size()>0)  {        
-            std::string name = taskList.front();        
+            QString name = taskList.front();        
             taskList.clear();
             taskList.push_back(name); // Put back one to finish
             items[name]->stopProcess();
@@ -478,7 +478,7 @@ void MainWindow::save_sby(int index)
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        if (current->metaObject()->className() == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;
             if (editor->modify()){
@@ -558,7 +558,7 @@ bool MainWindow::closeTab(int index, bool forceSave) {
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        if (current->metaObject()->className() == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;
             if (editor->modify()) {
@@ -592,7 +592,7 @@ void MainWindow::taskExecuted()
 {   
     taskList.pop_front();
     if (taskList.size()>0)  {        
-        std::string name = taskList.front();        
+        QString name = taskList.front();        
         items[name]->runSBYTask();
     } else {
         actionPlay->setEnabled(true); 
@@ -600,7 +600,7 @@ void MainWindow::taskExecuted()
     }
 }
 
-void MainWindow::startTask(std::string name)
+void MainWindow::startTask(QString name)
 {   
     actionPlay->setEnabled(false); 
     actionStop->setEnabled(true);
@@ -616,7 +616,7 @@ void MainWindow::startTask(std::string name)
 
 QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 {
-    std::unique_ptr<QSBYItem> fileBox = std::make_unique<QSBYItem>(file->getName().c_str(), file, nullptr, this);
+    std::unique_ptr<QSBYItem> fileBox = std::make_unique<QSBYItem>(file->getName(), file, nullptr, this);
     connect(fileBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
     connect(fileBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
     connect(fileBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
@@ -628,8 +628,8 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 
     for (auto const & task : file->getTasks())
     {
-        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName().c_str(), task.get(), fileBox.get(), this);
-        std::string name = groupBox->getName();
+        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName(), task.get(), fileBox.get(), this);
+        QString name = groupBox->getName();
         connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
         connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
         connect(groupBox.get(), &QSBYItem::previewOpen, this, &MainWindow::previewOpen);
@@ -769,10 +769,10 @@ void MainWindow::marginClicked(int position, int modifiers, int margin)
     }
 }
 
-ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
+ScintillaEdit *MainWindow::openEditorFile(QString fullpath)
 {
     ScintillaEdit *editor = openEditor(SCLEX_SBY);
-    QFile file(fullpath.c_str());
+    QFile file(fullpath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
         editor->setText(contents.constData());
@@ -783,22 +783,22 @@ ScintillaEdit *MainWindow::openEditorFile(std::string fullpath)
     return editor;
 }
 
-ScintillaEdit *MainWindow::openEditorText(std::string text, int lexer)
+ScintillaEdit *MainWindow::openEditorText(QString text, int lexer)
 {
     ScintillaEdit *editor = openEditor(lexer);
-    editor->setText(text.c_str());
+    editor->setText(text.toLatin1().data());
     editor->setUndoCollection(true);
     editor->setSavePoint();
     editor->gotoPos(0);
     return editor;
 }
 
-void MainWindow::previewOpen(std::string content, std::string fileName, std::string taskName, bool reloadOnly)
+void MainWindow::previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly)
 {
-    std::string name = fileName + "#" + taskName;
+    QString name = fileName + "#" + taskName;
  
     for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+        if(centralTabWidget->tabText(i) == name) { 
             centralTabWidget->setCurrentIndex(i); 
             if (reloadOnly) {
                 QWidget *current = centralTabWidget->widget(i);
@@ -808,7 +808,7 @@ void MainWindow::previewOpen(std::string content, std::string fileName, std::str
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);
-                        editor->setText(content.c_str());
+                        editor->setText(content.toLatin1().data());
                         editor->setUndoCollection(true);
                         editor->setSavePoint();
                         editor->gotoPos(0);
@@ -824,18 +824,18 @@ void MainWindow::previewOpen(std::string content, std::string fileName, std::str
     ScintillaEdit *editor = openEditorText(content, SCLEX_SBY);
     editor->setReadOnly(true);
 
-    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name);
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::previewLog(std::string content, std::string fileName, std::string taskName, bool reloadOnly)
+void MainWindow::previewLog(QString content, QString fileName, QString taskName, bool reloadOnly)
 {
-    std::string name = fileName;
-    if (!taskName.empty()) name+= "#" + taskName;
+    QString name = fileName;
+    if (!taskName.isEmpty()) name+= "#" + taskName;
     name += ".log";
  
     for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+        if(centralTabWidget->tabText(i) == name) { 
             centralTabWidget->setCurrentIndex(i); 
             if (reloadOnly) {
                 QWidget *current = centralTabWidget->widget(i);
@@ -845,7 +845,7 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);
-                        editor->setText(content.c_str());
+                        editor->setText(content.toLatin1().data());
                         editor->setUndoCollection(true);
                         editor->setSavePoint();
                         editor->gotoPos(0);
@@ -861,14 +861,14 @@ void MainWindow::previewLog(std::string content, std::string fileName, std::stri
     ScintillaEdit *editor = openEditorText(content, 0);
     editor->setReadOnly(true);
 
-    centralTabWidget->addTab(editor, QIcon(":/icons/resources/book.png"), name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/book.png"), name);
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
-void MainWindow::previewSource(std::string fileName, bool reloadOnly)
+void MainWindow::previewSource(QString fileName, bool reloadOnly)
 {
     for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == QString(fileName.c_str())) { 
+        if(centralTabWidget->tabText(i) == fileName) { 
             centralTabWidget->setCurrentIndex(i); 
             return; 
         } 
@@ -876,7 +876,7 @@ void MainWindow::previewSource(std::string fileName, bool reloadOnly)
     if (reloadOnly) return;
 
     boost::filesystem::path fullpath(currentFolder.toStdString());
-    fullpath /= fileName;
+    fullpath /= fileName.toStdString();
     QFile file(fullpath.string().c_str());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
@@ -891,7 +891,7 @@ void MainWindow::previewSource(std::string fileName, bool reloadOnly)
 
         connect(editor, &ScintillaEdit::modified, [=]() { 
             for(int i=0;i<centralTabWidget->count();i++) {
-                if(centralTabWidget->tabText(i) == QString(fileName.c_str())) { 
+                if(centralTabWidget->tabText(i) == fileName) { 
                     if(editor->modify()) {
                         centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                         centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
@@ -904,21 +904,21 @@ void MainWindow::previewSource(std::string fileName, bool reloadOnly)
             }
         });
 
-        centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName.c_str());
+        centralTabWidget->addTab(editor, QIcon(":/icons/resources/page_code.png"), fileName);
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
     }
 }
 
-void MainWindow::previewVCD(std::string fileName)
+void MainWindow::previewVCD(QString fileName)
 {
-    QProcess::startDetached(("gtkwave "+ fileName).c_str());
+    QProcess::startDetached("gtkwave "+ fileName);
 }
 
-void MainWindow::editOpen(std::string path, std::string fileName)
+void MainWindow::editOpen(QString path, QString fileName)
 {
-    std::string name = fileName;
+    QString name = fileName;
     for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+        if(centralTabWidget->tabText(i) == name) { 
             centralTabWidget->setCurrentIndex(i); 
             return; 
         } 
@@ -926,7 +926,7 @@ void MainWindow::editOpen(std::string path, std::string fileName)
     ScintillaEdit *editor = openEditorFile(path);
     connect(editor, &ScintillaEdit::modified, [=]() { 
         for(int i=0;i<centralTabWidget->count();i++) {
-            if(centralTabWidget->tabText(i) == QString(name.c_str())) { 
+            if(centralTabWidget->tabText(i) == name) { 
                 if(editor->modify()) {
                     centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                     centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
@@ -939,7 +939,7 @@ void MainWindow::editOpen(std::string path, std::string fileName)
         }
     });
 
-    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script_edit.png"), name.c_str());
+    centralTabWidget->addTab(editor, QIcon(":/icons/resources/script_edit.png"), name);
     centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 }
 
