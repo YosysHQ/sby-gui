@@ -132,7 +132,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     vbox->addWidget(dummyItem2);
 
     if (actionLog) {
-        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get().c_str(), item->getFileName(), item->getTaskName(), false); });
+        connect(actionLog, &QAction::triggered, [=]() { Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), false); });
     }
     if (actionWave) {
         connect(actionWave, &QAction::triggered, [=]() { 
@@ -166,13 +166,8 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
             auto files = item->getFiles();
             if (files.size()>1) {
                 QInputDialog qDialog;
-
-                QStringList items;
-                for (auto file : files)                    
-                    items << QString(file.c_str());
-
                 qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
-                qDialog.setComboBoxItems(items);
+                qDialog.setComboBoxItems(files);
                 qDialog.setWindowTitle("Choose file to open");
                 qDialog.setLabelText("Select file :");
 
@@ -180,7 +175,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
                         [=](const QString &file) { Q_EMIT previewSource(file.toStdString().c_str(), false); });
                 qDialog.exec();
             } else if (files.size()==1) {
-                Q_EMIT previewSource(files[0].c_str(), false);
+                Q_EMIT previewSource(files[0], false);
             }
         });    
     }
@@ -217,7 +212,7 @@ void QSBYItem::refreshView()
     if (actionLog) {
         if (item->getPreviousLog()) {
             actionLog->setEnabled(true);
-            Q_EMIT previewLog(item->getPreviousLog().get().c_str(), item->getFileName(), item->getTaskName(), true);
+            Q_EMIT previewLog(item->getPreviousLog().get(), item->getFileName(), item->getTaskName(), true);
         } else {
             actionLog->setEnabled(false);            
         }
@@ -256,12 +251,12 @@ void QSBYItem::refreshView()
             actionStatus->setText("Unknown");
         }
     }
-    std::string time = "Last run: ";
+    QString time = "Last run: ";
     if (item->getTimeSpent())
-        time += std::to_string(item->getTimeSpent().get()) + " sec";
+        time += QString::number(item->getTimeSpent().get()) + " sec";
     else
         time += "??? sec";    
-    label->setText(time.c_str());
+    label->setText(time);
 }
 void QSBYItem::runSBYTask()
 {

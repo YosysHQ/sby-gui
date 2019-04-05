@@ -56,12 +56,12 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
         QDomNodeList systemOutList = xml.elementsByTagName("system-out");
         if (!systemOutList.isEmpty()) {
             QDomElement systemOut = systemOutList.at(0).toElement();
-            previousLog = systemOut.text().toStdString();
+            previousLog = systemOut.text();
         }
     } 
 }
 
-SBYTask::SBYTask(boost::filesystem::path path, QString name, QString content, std::vector<std::string> files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
+SBYTask::SBYTask(boost::filesystem::path path, QString name, QString content, QStringList files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
 {
 }
 
@@ -102,8 +102,8 @@ void SBYFile::parse()
     parser.parse(path.string());
     for (auto task : parser.get_tasks())
     {
-        tasks.push_back(std::make_unique<SBYTask>(path,task.c_str(), parser.get_config_content(task).c_str(), parser.get_config_files(task), this));
-        tasksList.insert(QString(task.c_str()));
+        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
+        tasksList.insert(task);
     }
     if (!haveTasks()) {
         files = parser.get_config_files("");
@@ -129,7 +129,7 @@ void SBYFile::refresh()
     if(!newTasks.isEmpty())
     {
         for(auto name : newTasks) {
-            tasks.push_back(std::make_unique<SBYTask>(path,name, parser.get_config_content(name.toStdString()).c_str(), parser.get_config_files(name.toStdString()), this));
+            tasks.push_back(std::make_unique<SBYTask>(path,name, parser.get_config_content(name), parser.get_config_files(name), this));
             tasksList.insert(name);
         }
     }

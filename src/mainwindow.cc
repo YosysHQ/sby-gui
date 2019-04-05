@@ -130,8 +130,6 @@ void MainWindow::openLocation(QString path)
 MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
     initBasenameResource();
-    qRegisterMetaType<std::string>();
-    
     Scintilla::Catalogue::AddLexerModule(&lmSBY);
 
     process = nullptr;
@@ -757,7 +755,7 @@ void MainWindow::marginClicked(int position, int modifiers, int margin)
     QWidget *current = centralTabWidget->widget(centralTabWidget->currentIndex());
     if (current!=nullptr)
     {
-        if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+        if (current->metaObject()->className() == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;    
             
@@ -804,7 +802,7 @@ void MainWindow::previewOpen(QString content, QString fileName, QString taskName
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+                    if (current->metaObject()->className() == "ScintillaEdit")
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);
@@ -841,7 +839,7 @@ void MainWindow::previewLog(QString content, QString fileName, QString taskName,
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (std::string(current->metaObject()->className()) == "ScintillaEdit")
+                    if (current->metaObject()->className() == "ScintillaEdit")
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);

@@ -18,24 +18,18 @@
  */
 
 #include "sbyparser.h"
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-
 #include <QProcess>
 
 SBYParser::SBYParser() {}
 
 
-std::string SBYParser::dumpcfg(boost::filesystem::path path, std::string task)
+QString SBYParser::dumpcfg(boost::filesystem::path path, QString task)
 {
     QProcess process;        
     QStringList args;
     args << "--dumpcfg";
     args << path.filename().c_str();
-    args << task.c_str();
+    args << task;
     process.setProgram("sby");
     process.setArguments(args);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -45,8 +39,7 @@ std::string SBYParser::dumpcfg(boost::filesystem::path path, std::string task)
     process.setProcessChannelMode(QProcess::MergedChannels);       
     process.start();   
     process.waitForFinished();
-    QString output(process.readAllStandardOutput());
-    return output.toStdString();
+    return process.readAllStandardOutput();
 }
 
 bool SBYParser::parse(boost::filesystem::path path)
@@ -72,12 +65,12 @@ bool SBYParser::parse(boost::filesystem::path path)
         QStringList tasks = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
 
         for (auto task : tasks) {
-            configs.emplace(task.toStdString(), dumpcfg(path, task.toStdString()));    
-            tasklist.push_back(task.toStdString());            
+            configs.insert(task, dumpcfg(path, task)); 
+            tasklist << task;   
         }
         if (tasks.isEmpty())
         {
-            configs.emplace("", dumpcfg(path, ""));
+            configs.insert("", dumpcfg(path, ""));
         }
         return true;
     } catch (...) {
@@ -85,20 +78,19 @@ bool SBYParser::parse(boost::filesystem::path path)
     }
 }
 
-std::vector<std::string> SBYParser::get_config_files(std::string task)
+QStringList SBYParser::get_config_files(QString task)
 {
-    std::vector<std::string> files;
-    std::vector<std::string> lines;
-    boost::split(lines,configs[task],boost::is_any_of("\r\n"));
+    QStringList files;
+    QStringList lines = configs[task].split(QRegExp("\n|\r\n|\r"));
     bool filesSection = false;
     for(auto line : lines)
     {
-        boost::algorithm::trim(line);
+        line = line.trimmed();
 
         if (line == "--") filesSection = false;
-        if (boost::algorithm::starts_with(line,"[")) filesSection = false;
-        if (filesSection && !line.empty()) {
-            files.push_back(line);
+        if (line.startsWith("[")) filesSection = false;
+        if (filesSection && !line.isEmpty()) {
+            files << line;
         }
         if (line == "[files]") filesSection = true;        
     }

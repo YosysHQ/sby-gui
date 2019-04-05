@@ -26,6 +26,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <QMap>
+#include <QString>
+#include <QStringList>
 
 class SBYParser
 {
@@ -33,14 +36,14 @@ class SBYParser
     SBYParser();
 
     bool parse(boost::filesystem::path path);
-    std::vector<std::string> &get_tasks() { return tasklist; }
-    std::string get_config_content(std::string task) { return configs[task]; }
-    std::vector<std::string> get_config_files(std::string task);
+    QStringList &get_tasks() { return tasklist; }
+    QString get_config_content(QString task) { return configs[task]; }
+    QStringList get_config_files(QString task);
   private:
-    std::string dumpcfg(boost::filesystem::path path, std::string task);
+    QString dumpcfg(boost::filesystem::path path, QString task);
 
-    std::vector<std::string> tasklist;
-    std::map<std::string, std::string> configs;
+    QStringList tasklist;
+    QMap<QString, QString> configs;
 };
 
 #endif // SBYPARSER_H

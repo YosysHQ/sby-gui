@@ -41,8 +41,6 @@
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 
-Q_DECLARE_METATYPE(std::string)
-
 class ScintillaEdit;
 
 class MainWindow : public QMainWindow

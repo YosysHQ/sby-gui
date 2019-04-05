@@ -21,14 +21,14 @@ public:
     QString getStatus() { return status; }
     int getPercentage() { return percentage; }
     boost::optional<int> getTimeSpent() { return timeSpent; }
-    boost::optional<std::string> getPreviousLog() { return previousLog; }
+    boost::optional<QString> getPreviousLog() { return previousLog; }
 
     void updateFromXML(boost::filesystem::path path);
     virtual void update() = 0;
     virtual bool isTop() = 0;
     virtual QString getTaskName() = 0;
     virtual QString getContents() = 0;
-    virtual std::vector<std::string> &getFiles() = 0;
+    virtual QStringList &getFiles() = 0;
     virtual std::vector<boost::filesystem::path> &getVCDFiles() = 0;
 protected:
     QString name;
@@ -37,25 +37,25 @@ protected:
     QString status;
     int percentage;
     boost::optional<int> timeSpent;
-    boost::optional<std::string> previousLog;
+    boost::optional<QString> previousLog;
 };
 
 class SBYFile;
 
 class SBYTask : public SBYItem {
 public:
-    SBYTask(boost::filesystem::path path, QString name, QString content, std::vector<std::string> files, SBYFile* parent);
+    SBYTask(boost::filesystem::path path, QString name, QString content, QStringList files, SBYFile* parent);
     void update() override;
     void updateTask();
     bool isTop() override { return false; }
     QString getTaskName() override { return name; }
     QString getContents() override { return content; };
-    std::vector<std::string> &getFiles() override { return files; }
+    QStringList &getFiles() override { return files; }
     std::vector<boost::filesystem::path> &getVCDFiles() override { return vcdFiles; }
 private:
     QString content;    
     SBYFile *parent;
-    std::vector<std::string> files;
+    QStringList files;
     std::vector<boost::filesystem::path> vcdFiles;
 };
 
@@ -69,7 +69,7 @@ public:
     bool isTop() override { return true; }
     QString getTaskName() override { return ""; }
     QString getContents() override { return ""; };
-    std::vector<std::string> &getFiles() override { return files; }
+    QStringList &getFiles() override { return files; }
     std::vector<boost::filesystem::path> &getVCDFiles() override { return vcdFiles; }
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
     SBYTask *getTask(QString name);
@@ -78,7 +78,7 @@ private:
     SBYParser parser;
     std::vector<std::unique_ptr<SBYTask>> tasks;
     QSet<QString> tasksList;
-    std::vector<std::string> files;
+    QStringList files;
     std::vector<boost::filesystem::path> vcdFiles;
 };
 #endif // SBYITEM_H
