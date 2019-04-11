@@ -474,7 +474,7 @@ void MainWindow::save_sby(int index)
                     file.close();
                     editor->setSavePoint();                    
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
-                    if (filepath.completeSuffix()==".sby") 
+                    if (filepath.completeSuffix()=="sby") 
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
                     else
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/page_code.png"));
@@ -862,12 +862,12 @@ void MainWindow::previewSource(QString fileName, bool reloadOnly)
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
         int lexer = 0;
-        if (fullpath.completeSuffix()==".v") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()==".sv") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()==".vh") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()==".svh") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()==".vhd") lexer = SCLEX_VHDL;
-        if (fullpath.completeSuffix()==".vhdl") lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix()=="v") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()=="sv") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()=="vh") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()=="svh") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()=="vhd") lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix()=="vhdl") lexer = SCLEX_VHDL;
         ScintillaEdit *editor = openEditorText(contents.constData(), lexer);
 
         connect(editor, &ScintillaEdit::modified, [=]() { 
