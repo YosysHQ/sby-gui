@@ -19,9 +19,8 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QFileInfo>
 #include "mainwindow.h"
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include <boost/filesystem.hpp>
 
 int main(int argc, char *argv[])
 {
@@ -38,8 +37,9 @@ int main(int argc, char *argv[])
         printf("Several source folders/directories have been specified.\n");
         return -1;
     }
-    if(boost::filesystem::exists(positionalArguments[0].toStdString())) {
-        if (!boost::filesystem::is_directory(positionalArguments[0].toStdString())) {
+    QFileInfo location(positionalArguments[0]);
+    if(location.exists()) {
+        if (!location.isDir()) {
             printf("File location is not directory.\n");
             return -1;
         }

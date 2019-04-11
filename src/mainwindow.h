@@ -34,12 +34,11 @@
 #include <QLabel>
 #include <QTime>
 #include <QFileSystemWatcher>
+#include <QFileInfo>
+#include <QDir>
 #include <map>
 #include <deque>
 #include "qsbyitem.h"
-
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include <boost/filesystem.hpp>
 
 class ScintillaEdit;
 
@@ -55,7 +54,7 @@ class MainWindow : public QMainWindow
     void createMenusAndBars();
     QGroupBox *generateFileBox(SBYFile *file);
 
-    void openLocation(QString path);
+    void openLocation(QFileInfo path);
     void removeLayoutItems(QLayout* layout);
     void editOpen(QString path, QString fileName);
     void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
@@ -71,7 +70,7 @@ class MainWindow : public QMainWindow
     virtual void closeEvent(QCloseEvent * event);
     void save_sby(int index);
     bool closeTab(int index, bool forceSave);
-    QStringList getFileList(QString path);
+    QStringList getFileList(QDir path);
   protected Q_SLOTS:
     void taskExecuted();
     void startTask(QString name);
@@ -95,7 +94,7 @@ class MainWindow : public QMainWindow
 
     QGridLayout *grid;
 
-    QString currentFolder;
+    QDir currentFolder;
 
     QAction *actionNew;
     QAction *actionOpenFolder;
@@ -118,7 +117,7 @@ class MainWindow : public QMainWindow
     QProcess *process;
     QPlainTextEdit *log;
     QLabel *timeDisplay;
-    QString refreshLocation;
+    QFileInfo refreshLocation;
 
     QTime *taskTimer;
 

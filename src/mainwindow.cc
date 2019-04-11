@@ -37,23 +37,8 @@
 #include "../src/Catalogue.h"
 #include "ScintillaEdit.h"
 #include "SciLexer.h"
-#include <fstream>
 
-std::vector<boost::filesystem::path> getFilesInDir(const std::string &path, const std::string &extension){
-    std::vector<boost::filesystem::path> files;
-    boost::filesystem::path dir(path);
-    if(boost::filesystem::exists(path) && boost::filesystem::is_directory(path)) {
-        boost::filesystem::directory_iterator it(path);
-        boost::filesystem::directory_iterator endit;
-        while (it != endit) {
-            if(boost::filesystem::is_regular_file(*it) && (extension=="")?true:it->path().extension() == extension) {
-                files.push_back(it->path());
-            }
-            ++it;
-        }
-    }
-    return files;
-}
+
 
 static void initBasenameResource() { Q_INIT_RESOURCE(base); }
 
@@ -75,32 +60,32 @@ void MainWindow::removeLayoutItems(QLayout* layout)
     }
 }
 
-QStringList MainWindow::getFileList(QString path)
+QStringList MainWindow::getFileList(QDir path)
 {
-    QDir folder(currentFolder);
+    QDir folder(path);
     folder.setNameFilters(QStringList()<<"*.sby");
     return folder.entryList();
 }
 
-void MainWindow::openLocation(QString path)
+void MainWindow::openLocation(QFileInfo path)
 {
-    std::vector<boost::filesystem::path> fileList;
+    QFileInfoList fileList;
     refreshLocation = path;
-    if(boost::filesystem::exists(path.toStdString())) {
-        if (boost::filesystem::is_directory(path.toStdString())) {
-            currentFolder = path;
-            fileList = getFilesInDir(currentFolder.toStdString().c_str(), ".sby");
+    if(path.exists()) {
+        if (path.isDir()) {
+            currentFolder = path.absoluteFilePath();
+            currentFolder.setNameFilters(QStringList()<<"*.sby");
+            fileList = currentFolder.entryInfoList();
+            currentFileList = currentFolder.entryList();
         } else {
             QMessageBox::critical(this, "SBY Gui",
                                 "Invalid file location",
                                 QMessageBox::Ok);
             return;
         }
-
-        currentFileList = getFileList(currentFolder);
-        fileWatcher->addPath(currentFolder);
-        for(auto name : currentFileList) {
-            fileWatcher->addPath(QDir(currentFolder).filePath(name));
+        fileWatcher->addPath(currentFolder.canonicalPath());
+        for(auto name : fileList) {
+            fileWatcher->addPath(name.absoluteFilePath());
         }        
     } 
 
@@ -114,11 +99,11 @@ void MainWindow::openLocation(QString path)
     int cnt = 0;
     for (auto file : fileList)
     {
-        std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(file);
+        std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(file.absoluteFilePath().toStdString().c_str()));
         f->parse();
         f->update();
         files.push_back(std::move(f));
-        fileMap.emplace(std::make_pair(file.string().c_str(), files.back().get()));
+        fileMap.emplace(std::make_pair(file.fileName(), files.back().get()));
     }
 
     for(const auto & file : files) {
@@ -481,16 +466,15 @@ void MainWindow::save_sby(int index)
             ScintillaEdit *editor = (ScintillaEdit*)current;
             if (editor->modify()){
                 QString name = centralTabWidget->tabText(index);
-                boost::filesystem::path filepath(currentFolder.toStdString());
-                filepath /= name.toStdString();
-                QFile file(filepath.c_str());
+                QFileInfo filepath(currentFolder,name);
+                QFile file(filepath.canonicalPath());
                 if (file.open(QIODevice::WriteOnly)) {
                     QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
                     file.write(contents);
                     file.close();
                     editor->setSavePoint();                    
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
-                    if (filepath.extension()==".sby") 
+                    if (filepath.completeSuffix()==".sby") 
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
                     else
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/page_code.png"));
@@ -873,18 +857,17 @@ void MainWindow::previewSource(QString fileName, bool reloadOnly)
     }
     if (reloadOnly) return;
 
-    boost::filesystem::path fullpath(currentFolder.toStdString());
-    fullpath /= fileName.toStdString();
-    QFile file(fullpath.string().c_str());
+    QFileInfo fullpath(currentFolder,fileName);
+    QFile file(fullpath.canonicalFilePath());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
         int lexer = 0;
-        if (fullpath.extension()==".v") lexer = SCLEX_VERILOG;
-        if (fullpath.extension()==".sv") lexer = SCLEX_VERILOG;
-        if (fullpath.extension()==".vh") lexer = SCLEX_VERILOG;
-        if (fullpath.extension()==".svh") lexer = SCLEX_VERILOG;
-        if (fullpath.extension()==".vhd") lexer = SCLEX_VHDL;
-        if (fullpath.extension()==".vhdl") lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix()==".v") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()==".sv") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()==".vh") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()==".svh") lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix()==".vhd") lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix()==".vhdl") lexer = SCLEX_VHDL;
         ScintillaEdit *editor = openEditorText(contents.constData(), lexer);
 
         connect(editor, &ScintillaEdit::modified, [=]() { 
