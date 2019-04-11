@@ -37,15 +37,16 @@ int main(int argc, char *argv[])
         printf("Several source folders/directories have been specified.\n");
         return -1;
     }
-    QFileInfo location(positionalArguments[0]);
-    if(location.exists()) {
-        if (!location.isDir()) {
-            printf("File location is not directory.\n");
-            return -1;
+    if (positionalArguments.size() == 1) {
+        QFileInfo location(positionalArguments[0]);
+        if(location.exists()) {
+            if (!location.isDir()) {
+                printf("File location is not directory.\n");
+                return -1;
+            }
         }
     }
-
-    MainWindow win(positionalArguments.size() ? positionalArguments[0] : "");
+    MainWindow win(positionalArguments.size() ? positionalArguments[0] : QDir::currentPath());
     win.show();
 
     return app.exec();
