@@ -142,7 +142,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
 
                 QStringList items;
                 for (auto file : files)                    
-                    items << QString(file.filename().string().c_str());
+                    items << file.fileName();
 
                 qDialog.setOptions(QInputDialog::UseListViewForComboBoxItems);
                 qDialog.setComboBoxItems(items);
@@ -152,12 +152,12 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
                 connect(&qDialog, &QInputDialog::textValueSelected, 
                         [=](const QString &f) { 
                             for (auto file : files)                    
-                                if (file.filename().string()==f.toStdString())
-                                    Q_EMIT previewVCD(file.string().c_str()); 
+                                if (file.fileName() == f)
+                                    Q_EMIT previewVCD(file.absoluteFilePath()); 
                 });
                 qDialog.exec();
             } else if (files.size()==1) {
-                Q_EMIT previewVCD(files[0].string().c_str());
+                Q_EMIT previewVCD(files[0].absoluteFilePath());
             }
         });    
     }

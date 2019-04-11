@@ -3,22 +3,22 @@
 #include <QDomDocument>
 #include <QFile>
 
-SBYItem::SBYItem(boost::filesystem::path path, QString name) : path(path), name(name), timeSpent(nothing()), previousLog(nothing())
+SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(nothing()), previousLog(nothing())
 {
 
 }
 
-void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
-{
-    xmlFile.replace_extension("xml");
+void SBYItem::updateFromXML(QFileInfo inputFile)
+{    
+    QFileInfo xmlFile(inputFile.path() + "/" + inputFile.completeBaseName() + ".xml");
     timeSpent = nothing();
     previousLog = nothing();
     int errors = 0;
     int failures = 0;
     statusColor = 0;
-    if (boost::filesystem::exists(xmlFile)) {
+    if (xmlFile.exists()) {
         QDomDocument xml;
-        QFile f(xmlFile.string().c_str());
+        QFile f(xmlFile.absoluteFilePath());
         f.open(QIODevice::ReadOnly);
         xml.setContent(&f);
         f.close();
@@ -61,7 +61,7 @@ void SBYItem::updateFromXML(boost::filesystem::path xmlFile)
     } 
 }
 
-SBYTask::SBYTask(boost::filesystem::path path, QString name, QString content, QStringList files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
+SBYTask::SBYTask(QFileInfo path, QString name, QString content, QStringList files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
 {
 }
 
@@ -70,19 +70,16 @@ void SBYTask::updateTask()
     statusColor = 0;
     percentage = 0;
     vcdFiles.clear();
-    boost::filesystem::path dir = path.parent_path().string();
-    dir /= (path.stem().string() + "_" + name.toStdString());
-    if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-        updateFromXML(dir / (path.stem().string() + "_" + name.toStdString()));
-        boost::filesystem::path engine_0 = dir / "engine_0";
-        if (boost::filesystem::is_directory(engine_0) && boost::filesystem::exists(engine_0)) {
-            boost::filesystem::directory_iterator it(engine_0);
-            boost::filesystem::directory_iterator endit;
-            while (it != endit) {
-                if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".vcd") {
-                    vcdFiles.push_back(it->path());
-                }
-                ++it;
+    QFileInfo dir(path.path() + "/" + path.completeBaseName() + "_" + name);
+    if (dir.exists() && dir.isDir()) {
+        QFileInfo indir(path.path() + "/" + path.completeBaseName() + "_" + name  + "/" + path.completeBaseName() + "_" + name);
+        updateFromXML(indir);
+        QFileInfo engine_0 = QFileInfo(indir.path() + "/" +  "engine_0");
+        if (engine_0.exists() && engine_0.isDir()) {
+            QDir vcdDir = QDir(engine_0.absoluteFilePath());
+            vcdDir.setNameFilters(QStringList()<<"*.vcd");            
+            for(auto item : vcdDir.entryInfoList()) {
+                vcdFiles.push_back(item);
             }
         }
     }
@@ -93,13 +90,13 @@ void SBYTask::update()
     parent->update();    
 }
 
-SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().string().c_str())
+SBYFile::SBYFile(QFileInfo path) : SBYItem(path, path.fileName())
 {
 }
 
 void SBYFile::parse()
 {
-    parser.parse(QFileInfo(path.string().c_str()));
+    parser.parse(path);
     for (auto task : parser.get_tasks())
     {
         tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
@@ -121,7 +118,7 @@ void SBYFile::refresh()
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
-    parser.parse(QFileInfo(path.string().c_str()));
+    parser.parse(path);
     if (!haveTasks()) {
         files = parser.get_config_files("");
     }
@@ -160,22 +157,18 @@ void SBYFile::update()
     percentage = 0;
     vcdFiles.clear();
     if (!haveTasks()) {
-        boost::filesystem::path dir = path.parent_path().string();
-        dir /= path.stem();
-        if (boost::filesystem::is_directory(dir) && boost::filesystem::exists(dir)) {
-            updateFromXML(dir / path.stem());
-            
-            boost::filesystem::path engine_0 = dir / "engine_0";
-            if (boost::filesystem::is_directory(engine_0) && boost::filesystem::exists(engine_0)) {
-                boost::filesystem::directory_iterator it(engine_0);
-                boost::filesystem::directory_iterator endit;
-                while (it != endit) {
-                    if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".vcd") {
-                        vcdFiles.push_back(it->path());
-                    }
-                    ++it;
+        QFileInfo dir(path.path() + "/" + path.completeBaseName());
+        if (dir.exists() && dir.isDir()) {
+            QFileInfo indir(path.path() + "/" + path.completeBaseName() + "/" + path.completeBaseName());
+            updateFromXML(indir);
+            QFileInfo engine_0 = QFileInfo(indir.path() + "/" +  "engine_0");
+            if (engine_0.exists() && engine_0.isDir()) {
+                QDir vcdDir = QDir(engine_0.absoluteFilePath());
+                vcdDir.setNameFilters(QStringList()<<"*.vcd");            
+                for(auto item : vcdDir.entryInfoList()) {
+                    vcdFiles.push_back(item);
                 }
-            }
+            }            
         }        
     }
     else // have tasks

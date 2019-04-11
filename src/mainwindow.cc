@@ -99,7 +99,7 @@ void MainWindow::openLocation(QFileInfo path)
     int cnt = 0;
     for (auto file : fileList)
     {
-        std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(file.absoluteFilePath().toStdString().c_str()));
+        std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(file);
         f->parse();
         f->update();
         files.push_back(std::move(f));
@@ -209,7 +209,7 @@ void MainWindow::directoryChanged(const QString & path)
         for(auto name : newList) {
             QString filename = QDir(currentFolder).filePath(name);
             fileWatcher->addPath(filename);
-            std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString().c_str()));
+            std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(QFileInfo(filename));
             f->parse();
             f->update();
             files.push_back(std::move(f));
@@ -251,7 +251,7 @@ void MainWindow::directoryChanged(const QString & path)
 void MainWindow::fileChanged(const QString & filename)
 {
     SBYFile *file = fileMap[filename];
-    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(boost::filesystem::path(filename.toStdString()));
+    std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(QFileInfo(filename));
     f->parse();
     f->update();
     QSet<QString> newTaskSet = f->getTasksList(); 
