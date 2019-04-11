@@ -19,30 +19,31 @@
 
 #include "sbyparser.h"
 #include <QProcess>
+#include <QDir>
 
 SBYParser::SBYParser() {}
 
 
-QString SBYParser::dumpcfg(boost::filesystem::path path, QString task)
+QString SBYParser::dumpcfg(QFileInfo path, QString task)
 {
     QProcess process;        
     QStringList args;
     args << "--dumpcfg";
-    args << path.filename().c_str();
+    args << path.fileName();
     args << task;
     process.setProgram("sby");
     process.setArguments(args);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("PYTHONUNBUFFERED","1");
-    process.setProcessEnvironment(env);
-    process.setWorkingDirectory(path.parent_path().string().c_str());
+    process.setProcessEnvironment(env);    
+    process.setWorkingDirectory(path.dir().canonicalPath());
     process.setProcessChannelMode(QProcess::MergedChannels);       
     process.start();   
     process.waitForFinished();
     return process.readAllStandardOutput();
 }
 
-bool SBYParser::parse(boost::filesystem::path path)
+bool SBYParser::parse(QFileInfo path)
 {
     try {
         tasklist.clear();
@@ -51,13 +52,13 @@ bool SBYParser::parse(boost::filesystem::path path)
         QProcess process;        
         QStringList args;
         args << "--dumptasks";
-        args << path.filename().c_str();
+        args << path.fileName();
         process.setProgram("sby");
         process.setArguments(args);
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         env.insert("PYTHONUNBUFFERED","1");
         process.setProcessEnvironment(env);
-        process.setWorkingDirectory(path.parent_path().string().c_str());
+        process.setWorkingDirectory(path.dir().canonicalPath());
         process.setProcessChannelMode(QProcess::MergedChannels);       
         process.start();   
         process.waitForFinished();

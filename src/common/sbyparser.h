@@ -20,27 +20,22 @@
 #ifndef SBYPARSER_H
 #define SBYPARSER_H
 
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include <boost/filesystem.hpp>
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
 #include <QMap>
 #include <QString>
 #include <QStringList>
+#include <QFileInfo>
 
 class SBYParser
 {
   public:
     SBYParser();
 
-    bool parse(boost::filesystem::path path);
+    bool parse(QFileInfo path);
     QStringList &get_tasks() { return tasklist; }
     QString get_config_content(QString task) { return configs[task]; }
     QStringList get_config_files(QString task);
   private:
-    QString dumpcfg(boost::filesystem::path path, QString task);
+    QString dumpcfg(QFileInfo path, QString task);
 
     QStringList tasklist;
     QMap<QString, QString> configs;

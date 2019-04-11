@@ -99,7 +99,7 @@ SBYFile::SBYFile(boost::filesystem::path path) : SBYItem(path, path.filename().s
 
 void SBYFile::parse()
 {
-    parser.parse(path.string());
+    parser.parse(QFileInfo(path.string().c_str()));
     for (auto task : parser.get_tasks())
     {
         tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
@@ -121,7 +121,7 @@ void SBYFile::refresh()
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
-    parser.parse(path.string());
+    parser.parse(QFileInfo(path.string().c_str()));
     if (!haveTasks()) {
         files = parser.get_config_files("");
     }
