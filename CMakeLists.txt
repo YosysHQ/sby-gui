@@ -17,9 +17,6 @@ if(NOT DEFINED CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
      set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
 endif()
 
-# List of Boost libraries to include
-set(boost_libs filesystem)
-find_package(Boost REQUIRED COMPONENTS ${boost_libs})
 # Find the Qt5 libraries
 find_package(Qt5 COMPONENTS Core Widgets Xml REQUIRED)
 
