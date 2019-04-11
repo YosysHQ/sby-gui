@@ -29,7 +29,7 @@ public:
     virtual QString getTaskName() = 0;
     virtual QString getContents() = 0;
     virtual QStringList &getFiles() = 0;
-    virtual std::vector<QFileInfo> &getVCDFiles() = 0;
+    virtual QFileInfoList &getVCDFiles() = 0;
 protected:
     QString name;
     QFileInfo path;
@@ -51,12 +51,12 @@ public:
     QString getTaskName() override { return name; }
     QString getContents() override { return content; };
     QStringList &getFiles() override { return files; }
-    std::vector<QFileInfo> &getVCDFiles() override { return vcdFiles; }
+    QFileInfoList &getVCDFiles() override { return vcdFiles; }
 private:
     QString content;    
     SBYFile *parent;
     QStringList files;
-    std::vector<QFileInfo> vcdFiles;
+    QFileInfoList vcdFiles;
 };
 
 class SBYFile : public SBYItem  {
@@ -70,7 +70,7 @@ public:
     QString getTaskName() override { return ""; }
     QString getContents() override { return ""; };
     QStringList &getFiles() override { return files; }
-    std::vector<QFileInfo> &getVCDFiles() override { return vcdFiles; }
+    QFileInfoList &getVCDFiles() override { return vcdFiles; }
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
     SBYTask *getTask(QString name);
     QSet<QString> &getTasksList() { return tasksList; }
@@ -79,6 +79,6 @@ private:
     std::vector<std::unique_ptr<SBYTask>> tasks;
     QSet<QString> tasksList;
     QStringList files;
-    std::vector<QFileInfo> vcdFiles;
+    QFileInfoList vcdFiles;
 };
 #endif // SBYITEM_H

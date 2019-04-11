@@ -78,9 +78,7 @@ void SBYTask::updateTask()
         if (engine_0.exists() && engine_0.isDir()) {
             QDir vcdDir = QDir(engine_0.absoluteFilePath());
             vcdDir.setNameFilters(QStringList()<<"*.vcd");            
-            for(auto item : vcdDir.entryInfoList()) {
-                vcdFiles.push_back(item);
-            }
+            vcdFiles = vcdDir.entryInfoList();
         }
     }
 }
@@ -165,9 +163,7 @@ void SBYFile::update()
             if (engine_0.exists() && engine_0.isDir()) {
                 QDir vcdDir = QDir(engine_0.absoluteFilePath());
                 vcdDir.setNameFilters(QStringList()<<"*.vcd");            
-                for(auto item : vcdDir.entryInfoList()) {
-                    vcdFiles.push_back(item);
-                }
+                vcdFiles = vcdDir.entryInfoList();
             }            
         }        
     }
