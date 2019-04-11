@@ -103,7 +103,7 @@ void MainWindow::openLocation(QFileInfo path)
         f->parse();
         f->update();
         files.push_back(std::move(f));
-        fileMap.emplace(std::make_pair(file.fileName(), files.back().get()));
+        fileMap.insert(file.fileName(), files.back().get());
     }
 
     for(const auto & file : files) {
@@ -213,7 +213,7 @@ void MainWindow::directoryChanged(const QString & path)
             f->parse();
             f->update();
             files.push_back(std::move(f));
-            fileMap.emplace(std::make_pair(filename, files.back().get()));
+            fileMap.insert(filename, files.back().get());
 
             grid->addWidget(generateFileBox(files.back().get()), (int)files.size(), 0);
         }

@@ -125,7 +125,7 @@ class MainWindow : public QMainWindow
 
     QStringList currentFileList;
     std::vector<std::unique_ptr<SBYFile>> files;
-    std::map<QString, SBYFile*> fileMap;
+    QMap<QString, SBYFile*> fileMap;
     std::map<QString, std::unique_ptr<QSBYItem>> items;
     std::deque<QString> taskList;
 };
