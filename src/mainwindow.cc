@@ -151,6 +151,9 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 
     splitter_h->addWidget(scrollArea);
     splitter_h->addWidget(splitter_v);
+    splitter_h->setCollapsible(0, false);
+    splitter_h->setCollapsible(1, false);
+    splitter_h->setStretchFactor(0, 1);
 
     gridLayout->addWidget(splitter_h, 0, 0, 1, 1);
 
