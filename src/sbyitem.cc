@@ -1,5 +1,4 @@
 #include "sbyitem.h"
-#include <boost/lexical_cast.hpp>
 #include <QDomDocument>
 #include <QFile>
 #include <QProcess>
@@ -29,11 +28,11 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
             QDomElement testsuite = testsuiteList.at(0).toElement();
             if (testsuite.hasAttribute("errors"))
             {
-                errors = boost::lexical_cast<int>(testsuite.attribute("errors").toStdString());
+                errors = testsuite.attribute("errors").toInt();
             }
             if (testsuite.hasAttribute("failures"))
             {
-                failures = boost::lexical_cast<int>(testsuite.attribute("failures").toStdString());
+                failures = testsuite.attribute("failures").toInt();
             }
         }
         QDomNodeList testcaseList = xml.elementsByTagName("testcase");
@@ -41,7 +40,7 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
             QDomElement testcase = testcaseList.at(0).toElement();
             if (testcase.hasAttribute("time"))
             {
-                timeSpent = boost::lexical_cast<int>(testcase.attribute("time").toStdString());
+                timeSpent = testcase.attribute("time").toInt();
             }
             if (testcase.hasAttribute("status"))
             {

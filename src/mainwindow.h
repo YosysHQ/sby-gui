@@ -106,11 +106,6 @@ class MainWindow : public QMainWindow
     QAction *actionCloseAll;
     QAction *actionExit;
 
-    QAction *actionCut;
-    QAction *actionCopy;
-    QAction *actionPaste;
-    QAction *actionUndo;
-    QAction *actionRedo;
     QAction *actionPlay;
     QAction *actionStop;
 

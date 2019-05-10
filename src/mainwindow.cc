@@ -326,13 +326,9 @@ void MainWindow::createMenusAndBars()
 
     menuBar = new QMenuBar();
     QMenu *menu_File = new QMenu("&File", menuBar);
-    QMenu *menu_Edit = new QMenu("&Edit", menuBar);
-    QMenu *menu_Search = new QMenu("&Search", menuBar);
     QMenu *menu_Help = new QMenu("&Help", menuBar);
 
     menuBar->addAction(menu_File->menuAction());
-    menuBar->addAction(menu_Edit->menuAction());
-    menuBar->addAction(menu_Search->menuAction());
     menuBar->addAction(menu_Help->menuAction());
     setMenuBar(menuBar);
 
@@ -393,36 +389,6 @@ void MainWindow::createMenusAndBars()
     actionExit->setStatusTip("Exit application");
     connect(actionExit, &QAction::triggered, this, &MainWindow::close);
     menu_File->addAction(actionExit);
-
-    actionUndo = new QAction("Undo", this);
-    actionUndo->setIcon(QIcon(":/icons/resources/edit-undo.png"));
-    //actionUndo->setShortcuts(QKeySequence::Undo);
-    menu_Edit->addAction(actionUndo);
-    actionRedo = new QAction("Redo", this);
-    actionRedo->setIcon(QIcon(":/icons/resources/edit-redo.png"));
-    //actionRedo->setShortcuts(QKeySequence::Redo);
-    menu_Edit->addAction(actionRedo);
-    menu_Edit->addSeparator();
-    actionCut = new QAction("Cut", this);
-    actionCut->setIcon(QIcon(":/icons/resources/edit-cut.png"));
-    //actionCut->setShortcuts(QKeySequence::Cut);
-    menu_Edit->addAction(actionCut);
-    actionCopy = new QAction("Copy", this);
-    actionCopy->setIcon(QIcon(":/icons/resources/edit-copy.png"));
-    //actionCopy->setShortcuts(QKeySequence::Copy);
-    menu_Edit->addAction(actionCopy);
-    actionPaste = new QAction("Paste", this);
-    actionPaste->setIcon(QIcon(":/icons/resources/edit-paste.png"));
-    //actionPaste->setShortcuts(QKeySequence::Paste);
-    menu_Edit->addAction(actionPaste);
-    menu_Edit->addAction(new QAction("Delete", this));
-    menu_Edit->addAction(new QAction("Select All", this));
-
-    menu_Search->addAction(new QAction("Find...", this));
-    menu_Search->addAction(new QAction("Find Next", this));
-    menu_Search->addAction(new QAction("Find Previous", this));
-    menu_Search->addAction(new QAction("Replace...", this));
-    menu_Search->addAction(new QAction("Go to...", this));
 
     menu_Help->addAction(new QAction("About", this));
 
