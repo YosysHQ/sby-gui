@@ -257,8 +257,8 @@ void MainWindow::fileChanged(const QString & filename)
     std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(QFileInfo(filename));
     f->parse();
     f->update();
-    QSet<QString> newTaskSet = f->getTasksList(); 
-    QSet<QString> currTaskSet = file->getTasksList(); 
+    QSet<QString> newTaskSet = f->getTasksSet(); 
+    QSet<QString> currTaskSet = file->getTasksSet(); 
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 

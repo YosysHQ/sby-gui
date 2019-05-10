@@ -5,8 +5,8 @@
 #include <QString>
 #include <QFileInfo>
 #include <QDir>
+#include <QMap>
 #include <memory>
-#include "sbyparser.h"
 
 class SBYItem {
 public:
@@ -72,11 +72,17 @@ public:
     QFileInfoList &getVCDFiles() override { return vcdFiles; }
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
     SBYTask *getTask(QString name);
-    QSet<QString> &getTasksList() { return tasksList; }
+    QSet<QString> &getTasksSet() { return tasksSet; }
 private:
-    SBYParser parser;
+    bool parse(QFileInfo &path);
+    QStringList get_config_files(QString task);
+    QString dumpcfg(QFileInfo &path, QString task);
+
+    QStringList taskList;
+    QMap<QString, QString> configs;
+
     std::vector<std::unique_ptr<SBYTask>> tasks;
-    QSet<QString> tasksList;
+    QSet<QString> tasksSet;
     QStringList files;
     QFileInfoList vcdFiles;
 };

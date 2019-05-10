@@ -2,6 +2,8 @@
 #include <boost/lexical_cast.hpp>
 #include <QDomDocument>
 #include <QFile>
+#include <QProcess>
+#include <QDir>
 
 SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(-1), previousLog()
 {
@@ -92,16 +94,90 @@ SBYFile::SBYFile(QFileInfo path) : SBYItem(path, path.fileName())
 {
 }
 
+QString SBYFile::dumpcfg(QFileInfo &path, QString task)
+{
+    QProcess process;        
+    QStringList args;
+    args << "--dumpcfg";
+    args << path.fileName();
+    args << task;
+    process.setProgram("sby");
+    process.setArguments(args);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("PYTHONUNBUFFERED","1");
+    process.setProcessEnvironment(env);    
+    process.setWorkingDirectory(path.dir().canonicalPath());
+    process.setProcessChannelMode(QProcess::MergedChannels);       
+    process.start();   
+    process.waitForFinished();
+    return process.readAllStandardOutput();
+}
+
+bool SBYFile::parse(QFileInfo &path)
+{
+    try {
+        taskList.clear();
+        configs.clear();
+
+        QProcess process;        
+        QStringList args;
+        args << "--dumptasks";
+        args << path.fileName();
+        process.setProgram("sby");
+        process.setArguments(args);
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        env.insert("PYTHONUNBUFFERED","1");
+        process.setProcessEnvironment(env);
+        process.setWorkingDirectory(path.dir().canonicalPath());
+        process.setProcessChannelMode(QProcess::MergedChannels);       
+        process.start();   
+        process.waitForFinished();
+        QString output(process.readAllStandardOutput());
+        QStringList tasks = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
+
+        for (auto task : tasks) {
+            configs.insert(task, dumpcfg(path, task)); 
+            taskList << task;   
+        }
+        if (tasks.isEmpty())
+        {
+            configs.insert("", dumpcfg(path, ""));
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+QStringList SBYFile::get_config_files(QString task)
+{
+    QStringList files;
+    QStringList lines = configs[task].split(QRegExp("\n|\r\n|\r"));
+    bool filesSection = false;
+    for(auto line : lines)
+    {
+        line = line.trimmed();
+
+        if (line == "--") filesSection = false;
+        if (line.startsWith("[")) filesSection = false;
+        if (filesSection && !line.isEmpty()) {
+            files << line;
+        }
+        if (line == "[files]") filesSection = true;        
+    }
+    return files;
+}
+
 void SBYFile::parse()
 {
-    parser.parse(path);
-    for (auto task : parser.get_tasks())
+    parse(path);
+    for (auto task : taskList)
     {
-        tasks.push_back(std::make_unique<SBYTask>(path,task, parser.get_config_content(task), parser.get_config_files(task), this));
-        tasksList.insert(task);
+        tasks.push_back(std::make_unique<SBYTask>(path,task, configs[task], get_config_files(task), this));
+        tasksSet.insert(task);
     }
     if (!haveTasks()) {
-        files = parser.get_config_files("");
+        files = get_config_files("");
     }
 }
 
@@ -111,21 +187,21 @@ void SBYFile::refresh()
     f->parse();
     f->update();
 
-    QSet<QString> newTaskSet = f->getTasksList(); 
-    QSet<QString> currTaskSet = getTasksList(); 
+    QSet<QString> newTaskSet = f->getTasksSet(); 
+    QSet<QString> currTaskSet = getTasksSet(); 
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
-    parser.parse(path);
+    parse(path);
     if (!haveTasks()) {
-        files = parser.get_config_files("");
+        files = get_config_files("");
     }
 
     if(!newTasks.isEmpty())
     {
         for(auto name : newTasks) {
-            tasks.push_back(std::make_unique<SBYTask>(path,name, parser.get_config_content(name), parser.get_config_files(name), this));
-            tasksList.insert(name);
+            tasks.push_back(std::make_unique<SBYTask>(path,name, configs[name], get_config_files(name), this));
+            tasksSet.insert(name);
         }
     }
     if(!deletedTasks.isEmpty())
@@ -138,7 +214,7 @@ void SBYFile::refresh()
                 }
                 else ++it;
             }            
-            tasksList.remove(name);
+            tasksSet.remove(name);
         }
     }
     update();
@@ -146,7 +222,7 @@ void SBYFile::refresh()
 
 bool SBYFile::haveTasks()
 {
-    return parser.get_tasks().size() != 0;
+    return taskList.size() != 0;
 }
 
 void SBYFile::update()
