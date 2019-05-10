@@ -432,13 +432,13 @@ void MainWindow::save_sby(int index)
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (current->metaObject()->className() == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;
             if (editor->modify()){
                 QString name = centralTabWidget->tabText(index);
                 QFileInfo filepath(currentFolder,name);
-                QFile file(filepath.canonicalPath());
+                QFile file(filepath.absoluteFilePath());
                 if (file.open(QIODevice::WriteOnly)) {
                     QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
                     file.write(contents);
@@ -511,7 +511,7 @@ bool MainWindow::closeTab(int index, bool forceSave) {
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (current->metaObject()->className() == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;
             if (editor->modify()) {
