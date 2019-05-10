@@ -107,7 +107,7 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     });   
     connect(actionStop, &QAction::triggered, [=]() { process->terminate(); });
     if (item->isTop()) {    
-        connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT editOpen(item->getFullPath(), item->getFileName()); });  
+        connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT editOpen(item->getFullPath(), item->getFileName(), false); });  
     } else {
         connect(actionEdit, &QAction::triggered, [=]() { Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), false); });
     }
@@ -208,7 +208,11 @@ void QSBYItem::refreshView()
     progressBar->setGraphicsEffect(effectFile); 
     progressBar->setValue(item->getPercentage());
 
-    Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), true);
+    if (item->isTop()) {    
+        Q_EMIT editOpen(item->getFullPath(), item->getFileName(), true);
+    } else {
+        Q_EMIT previewOpen(item->getContents(), item->getFileName(), item->getName(), true);
+    }
     if (actionLog) {
         if (!item->getPreviousLog().isEmpty()) {
             actionLog->setEnabled(true);

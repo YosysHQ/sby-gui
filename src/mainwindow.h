@@ -56,7 +56,7 @@ class MainWindow : public QMainWindow
 
     void openLocation(QFileInfo path);
     void removeLayoutItems(QLayout* layout);
-    void editOpen(QString path, QString fileName);
+    void editOpen(QString path, QString fileName, bool reloadOnly);
     void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewSource(QString fileName, bool reloadOnly);

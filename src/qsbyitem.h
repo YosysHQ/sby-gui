@@ -27,7 +27,7 @@ class QSBYItem : public QGroupBox
     void appendLog(QString content);
     void taskExecuted();
     void startTask(QString name);
-    void editOpen(QString path, QString fileName);
+    void editOpen(QString path, QString fileName, bool reloadOnly);
     void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewSource(QString fileName, bool reloadOnly);

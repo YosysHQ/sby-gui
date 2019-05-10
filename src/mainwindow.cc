@@ -710,7 +710,7 @@ void MainWindow::marginClicked(int position, int modifiers, int margin)
     QWidget *current = centralTabWidget->widget(centralTabWidget->currentIndex());
     if (current!=nullptr)
     {
-        if (current->metaObject()->className() == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "ScintillaEdit")
         {
             ScintillaEdit *editor = (ScintillaEdit*)current;    
             
@@ -757,7 +757,7 @@ void MainWindow::previewOpen(QString content, QString fileName, QString taskName
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (current->metaObject()->className() == "ScintillaEdit")
+                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);
@@ -794,7 +794,7 @@ void MainWindow::previewLog(QString content, QString fileName, QString taskName,
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (current->metaObject()->className() == "ScintillaEdit")
+                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
                     {
                         ScintillaEdit *editor = (ScintillaEdit*)current;
                         editor->setReadOnly(false);
@@ -866,12 +866,30 @@ void MainWindow::previewVCD(QString fileName)
     QProcess::startDetached("gtkwave "+ fileName);
 }
 
-void MainWindow::editOpen(QString path, QString fileName)
+void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
 {
     QString name = fileName;
     for(int i=0;i<centralTabWidget->count();i++) {
         if(centralTabWidget->tabText(i) == name) { 
             centralTabWidget->setCurrentIndex(i); 
+            if (reloadOnly) {
+                QWidget *current = centralTabWidget->widget(i);
+                if (current!=nullptr)
+                {
+                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
+                    {
+                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        QFile file(path);
+                        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                            QByteArray contents = file.readAll();
+                            editor->setText(contents.constData());
+                            editor->setUndoCollection(true);
+                            editor->setSavePoint();
+                            editor->gotoPos(0);
+                        }                        
+                    } 
+                }
+            }            
             return; 
         } 
     }
