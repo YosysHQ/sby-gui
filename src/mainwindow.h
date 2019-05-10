@@ -72,6 +72,7 @@ class MainWindow : public QMainWindow
     bool closeTab(int index, bool forceSave);
     QStringList getFileList(QDir path);
   protected Q_SLOTS:
+    void about();
     void taskExecuted();
     void startTask(QString name);
 

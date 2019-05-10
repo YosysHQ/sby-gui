@@ -322,7 +322,9 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::createMenusAndBars()
 {
-    QAction *actionAbout = new QAction("About", this);
+    QAction *actionAbout = new QAction("&About", this);
+    actionAbout->setStatusTip("Show the application's about box");
+    connect(actionAbout, &QAction::triggered, this, &MainWindow::about);
 
     menuBar = new QMenuBar();
     QMenu *menu_File = new QMenu("&File", menuBar);
@@ -390,7 +392,7 @@ void MainWindow::createMenusAndBars()
     connect(actionExit, &QAction::triggered, this, &MainWindow::close);
     menu_File->addAction(actionExit);
 
-    menu_Help->addAction(new QAction("About", this));
+    menu_Help->addAction(actionAbout);
 
     mainToolBar->addAction(actionNew);
     mainToolBar->addAction(actionOpenFolder);
@@ -904,4 +906,11 @@ void MainWindow::refreshView()
 {
     openLocation(refreshLocation);
     appendLog("All processes killed\n");
+}
+
+
+void MainWindow::about()
+{
+    QMessageBox::about(this, tr("SBY Gui"), tr("The <b>SymbiYosys GUI</b> is part of "
+                                               "<br/><b>SymbioticEDA</b> solution for formal verification."));
 }
