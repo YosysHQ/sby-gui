@@ -103,7 +103,7 @@ void MainWindow::openLocation(QFileInfo path)
         f->parse();
         f->update();
         files.push_back(std::move(f));
-        fileMap.insert(file.fileName(), files.back().get());
+        fileMap.insert(file.absoluteFilePath(), files.back().get());
     }
 
     for(const auto & file : files) {
