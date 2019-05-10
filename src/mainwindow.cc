@@ -878,10 +878,15 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
                 {
                     if (QString(current->metaObject()->className()) == "ScintillaEdit")
                     {
-                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        ScintillaEdit *editor = (ScintillaEdit*)current;                        
+                        if(editor->modify()) {
+                            int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to reload file?", QMessageBox::Yes|QMessageBox::No).exec();
+                            if (result == QMessageBox::No) return;
+                        }                        
                         QFile file(path);
                         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                             QByteArray contents = file.readAll();
+                            editor->setUndoCollection(false);
                             editor->setText(contents.constData());
                             editor->setUndoCollection(true);
                             editor->setSavePoint();
@@ -893,6 +898,8 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
             return; 
         } 
     }
+    if (reloadOnly) return;
+
     ScintillaEdit *editor = openEditorFile(path);
     connect(editor, &ScintillaEdit::modified, [=]() { 
         for(int i=0;i<centralTabWidget->count();i++) {
