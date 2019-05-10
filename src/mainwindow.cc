@@ -410,10 +410,13 @@ void MainWindow::createMenusAndBars()
         for (auto & item : files)
         {
             if (item->haveTasks())  {
-                for(const auto & task : item->getTasks())
-                    Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName()); 
+                for(const auto & task : item->getTasks()) {
+                    if (task->getStatusColor()!=1)
+                        Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName()); 
+                }
             } else {
-                Q_EMIT startTask(item->getFileName() ); 
+                if (item->getStatusColor()!=1)
+                    Q_EMIT startTask(item->getFileName()); 
             }
         }
     });   
