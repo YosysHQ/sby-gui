@@ -3,7 +3,7 @@
 #include <QDomDocument>
 #include <QFile>
 
-SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(nothing()), previousLog(nothing())
+SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(-1), previousLog()
 {
 
 }
@@ -11,8 +11,8 @@ SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpe
 void SBYItem::updateFromXML(QFileInfo inputFile)
 {    
     QFileInfo xmlFile(inputFile.path() + "/" + inputFile.completeBaseName() + ".xml");
-    timeSpent = nothing();
-    previousLog = nothing();
+    timeSpent = -1;
+    previousLog = "";
     int errors = 0;
     int failures = 0;
     statusColor = 0;
@@ -39,7 +39,7 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
             QDomElement testcase = testcaseList.at(0).toElement();
             if (testcase.hasAttribute("time"))
             {
-                timeSpent = timeSpent.just(boost::lexical_cast<int>(testcase.attribute("time").toStdString()));
+                timeSpent = boost::lexical_cast<int>(testcase.attribute("time").toStdString());
             }
             if (testcase.hasAttribute("status"))
             {
@@ -56,7 +56,7 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
         QDomNodeList systemOutList = xml.elementsByTagName("system-out");
         if (!systemOutList.isEmpty()) {
             QDomElement systemOut = systemOutList.at(0).toElement();
-            previousLog = previousLog.just(systemOut.text());
+            previousLog = systemOut.text();
         }
     } 
 }

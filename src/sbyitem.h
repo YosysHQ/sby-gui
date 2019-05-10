@@ -5,7 +5,6 @@
 #include <QString>
 #include <QFileInfo>
 #include <QDir>
-#include "Maybe.h"
 #include <memory>
 #include "sbyparser.h"
 
@@ -20,8 +19,8 @@ public:
     int getStatusColor() { return statusColor; }
     QString getStatus() { return status; }
     int getPercentage() { return percentage; }
-    Maybe<int> &getTimeSpent() { return timeSpent; }
-    Maybe<QString> &getPreviousLog() { return previousLog; }
+    int &getTimeSpent() { return timeSpent; }
+    QString &getPreviousLog() { return previousLog; }
 
     void updateFromXML(QFileInfo path);
     virtual void update() = 0;
@@ -36,8 +35,8 @@ protected:
     int statusColor;
     QString status;
     int percentage;
-    Maybe<int> timeSpent;
-    Maybe<QString> previousLog;
+    int timeSpent;
+    QString previousLog;
 };
 
 class SBYFile;
