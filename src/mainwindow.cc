@@ -122,7 +122,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     setObjectName(QStringLiteral("MainWindow"));
     resize(1024, 768);
 
-    setWindowIcon(QIcon(":/icons/resources/symbiotic.png"));
+    setWindowIcon(QIcon(":/icons/resources/yosyshq.png"));
 
     createMenusAndBars();
 
@@ -940,5 +940,5 @@ void MainWindow::refreshView()
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("SBY Gui"), tr("The <b>SymbiYosys GUI</b> is part of "
-                                               "<br/><b>SymbioticEDA</b> solution for formal verification."));
+                                               "<br/><b>YosysHQ</b> solution for formal verification."));
 }
