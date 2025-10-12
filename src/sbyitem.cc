@@ -30,30 +30,21 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
         if (!testsuiteList.isEmpty()) {
             QDomElement testsuite = testsuiteList.at(0).toElement();
             if (testsuite.hasAttribute("errors"))
-            {
                 errors = testsuite.attribute("errors").toInt();
-            }
             if (testsuite.hasAttribute("failures"))
-            {
                 failures = testsuite.attribute("failures").toInt();
-            }
-        }
-        QDomNodeList testcaseList = xml.elementsByTagName("testcase");
-        if (!testcaseList.isEmpty()) {
-            QDomElement testcase = testcaseList.at(0).toElement();
-            if (testcase.hasAttribute("time"))
-            {
-                timeSpent = testcase.attribute("time").toInt();
-            }
-            if (testcase.hasAttribute("status"))
-            {
-                percentage = 100;                
-                status = testcase.attribute("status");
-                if (errors==0 && failures==0) {
-                    statusColor = 1;                     
-                }
-                else {
-                    statusColor = 2; 
+            if (testsuite.hasAttribute("time"))
+                timeSpent = testsuite.attribute("time").toInt();
+            QDomNodeList propsList = testsuite.elementsByTagName("property");
+            for (int i = 0; i < propsList.count(); ++i) {
+                QDomElement prop = propsList.at(i).toElement();
+                if (prop.attribute("name") == "status") {
+                    status = prop.attribute("value");
+                    percentage = 100;
+                    if (errors == 0 && failures == 0)
+                        statusColor = 1;
+                    else
+                        statusColor = 2;
                 }
             }
         }
