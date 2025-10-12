@@ -3,6 +3,9 @@
 #include <QFile>
 #include <QProcess>
 #include <QDir>
+#if QT_VERSION_MAJOR >= 6
+#include <QRegularExpression>
+#endif
 
 SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(-1), previousLog()
 {
@@ -132,7 +135,11 @@ bool SBYFile::parse(QFileInfo &path)
         process.start();   
         process.waitForFinished();
         QString output(process.readAllStandardOutput());
+#if QT_VERSION_MAJOR >= 6
+        QStringList tasks = output.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
+#else
         QStringList tasks = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
+#endif
 
         for (auto task : tasks) {
             configs.insert(task, dumpcfg(path, task)); 
@@ -151,7 +158,11 @@ bool SBYFile::parse(QFileInfo &path)
 QStringList SBYFile::get_config_files(QString task)
 {
     QStringList files;
+#if QT_VERSION_MAJOR >= 6
+    QStringList lines = configs[task].split(QRegularExpression("\r?\n"));
+#else
     QStringList lines = configs[task].split(QRegExp("\n|\r\n|\r"));
+#endif
     bool filesSection = false;
     for(auto line : lines)
     {

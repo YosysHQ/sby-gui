@@ -40,7 +40,7 @@
 #include <deque>
 #include "qsbyitem.h"
 
-class ScintillaEdit;
+class QsciScintilla;
 
 class MainWindow : public QMainWindow
 {
@@ -61,9 +61,9 @@ class MainWindow : public QMainWindow
     void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewSource(QString fileName, bool reloadOnly);
     void previewVCD(QString fileName);
-    ScintillaEdit *openEditor(int lexer);
-    ScintillaEdit *openEditorFile(QString fullpath);
-    ScintillaEdit *openEditorText(QString text, int lexer);
+    QsciScintilla *openEditor(int lexer);
+    QsciScintilla *openEditorFile(QString fullpath);
+    QsciScintilla *openEditorText(QString text, int lexer);
     void refreshView();
     void appendLog(QString logline);
     void showTime();
@@ -84,7 +84,7 @@ class MainWindow : public QMainWindow
 
     void directoryChanged(const QString & path);
     void fileChanged(const QString & path);
-    void marginClicked(int position, int modifiers, int margin);
+    void marginClicked(int margin, int position, Qt::KeyboardModifiers modifiers);
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
@@ -115,7 +115,7 @@ class MainWindow : public QMainWindow
     QLabel *timeDisplay;
     QFileInfo refreshLocation;
 
-    QTime *taskTimer;
+    QElapsedTimer *taskTimer;
 
     QFileSystemWatcher *fileWatcher;
 

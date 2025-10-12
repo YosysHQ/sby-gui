@@ -21,11 +21,17 @@ QSBYItem::QSBYItem(const QString & title, SBYItem *item, QSBYItem *top, QWidget 
     QWidget *dummyItem = new QWidget(this);
     QHBoxLayout *hbox = new QHBoxLayout(dummyItem);
     hbox->setSpacing(0); 
-    hbox->setMargin(0);
     QWidget *dummyItem2 = new QWidget(this);
     QHBoxLayout *hbox2 = new QHBoxLayout(dummyItem2);
-    hbox2->setSpacing(0); 
+    hbox2->setSpacing(0);
+
+#if QT_VERSION_MAJOR >= 6
+    hbox->setContentsMargins(0, 0, 0, 0); 
+    hbox2->setContentsMargins(0, 0, 0, 0); 
+#else
+    hbox->setMargin(0);
     hbox2->setMargin(0);
+#endif
 
     progressBar = new QProgressBar(this);
 

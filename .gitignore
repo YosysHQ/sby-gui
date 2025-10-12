@@ -8,5 +8,6 @@ Makefile
 /CMakeScripts
 /CMakeCache.txt
 /Testing/*
+/.qt
 CTestTestfile.cmake
 install_manifest.txt

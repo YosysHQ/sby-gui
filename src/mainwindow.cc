@@ -33,9 +33,12 @@
 #include <QFile>
 #include <QGraphicsColorizeEffect>
 #include <QMessageBox>
+#include "Qsci/qscilexerverilog.h"
+#include "Qsci/qscilexervhdl.h"
+#include "Qsci/qsciscintilla.h"
 #include "lexers/LexSBY.h"
+#include "qscilexersby.h"
 #include "../src/Catalogue.h"
-#include "ScintillaEdit.h"
 #include "SciLexer.h"
 
 
@@ -184,9 +187,9 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     connect(fileWatcher, &QFileSystemWatcher::fileChanged, this, &MainWindow::fileChanged);
     connect(fileWatcher, &QFileSystemWatcher::directoryChanged, this, &MainWindow::directoryChanged);
 
-    openLocation(path);
+    openLocation(QFileInfo(path));
 
-    taskTimer = new QTime;
+    taskTimer = new QElapsedTimer();
     taskTimer->start();
     
     QTimer *timer = new QTimer(this);
@@ -198,14 +201,23 @@ void MainWindow::directoryChanged(const QString & path)
 {
     QStringList newFileList = getFileList(currentFolder);
 
-    QSet<QString> newDirSet = QSet<QString>::fromList(newFileList); 
+#if QT_VERSION_MAJOR >= 6
+    QSet<QString> newDirSet(newFileList.begin(), newFileList.end());
+    QSet<QString> currentDirSet(currentFileList.begin(), currentFileList.end());
+#else
+    QSet<QString> newDirSet = QSet<QString>::fromList(newFileList);
     QSet<QString> currentDirSet = QSet<QString>::fromList(currentFileList);
+#endif
     QSet<QString> newFiles = newDirSet - currentDirSet;
     QSet<QString> deletedFiles = currentDirSet - newDirSet;
 
-
+#if QT_VERSION_MAJOR >= 6
+    QStringList newList(newFiles.begin(), newFiles.end());
+    QStringList deleteList(deletedFiles.begin(), deletedFiles.end());
+#else
     QStringList newList = newFiles.toList();
     QStringList deleteList = deletedFiles.toList();
+#endif
 
     if(!newList.isEmpty())
     {
@@ -435,18 +447,18 @@ void MainWindow::save_sby(int index)
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (QString(current->metaObject()->className()) == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "QsciScintilla")
         {
-            ScintillaEdit *editor = (ScintillaEdit*)current;
-            if (editor->modify()){
+            QsciScintilla *editor = (QsciScintilla*)current;
+            if (editor->isModified()){
                 QString name = centralTabWidget->tabText(index);
                 QFileInfo filepath(currentFolder,name);
                 QFile file(filepath.absoluteFilePath());
                 if (file.open(QIODevice::WriteOnly)) {
-                    QByteArray contents = editor->get_doc()->get_char_range(0, editor->get_doc()->length());
+                    QByteArray contents = editor->text().toUtf8();
                     file.write(contents);
                     file.close();
-                    editor->setSavePoint();                    
+                    editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);                    
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
                     if (filepath.completeSuffix()=="sby") 
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
@@ -491,7 +503,7 @@ void MainWindow::open_folder()
                                                 QFileDialog::ShowDirsOnly
                                                 | QFileDialog::DontResolveSymlinks);
     if (!folderName.isEmpty()) {
-        openLocation(folderName);
+        openLocation(QFileInfo(folderName));
     }
 }
 
@@ -514,10 +526,10 @@ bool MainWindow::closeTab(int index, bool forceSave) {
     QWidget *current = centralTabWidget->widget(index);
     if (current!=nullptr)
     {
-        if (QString(current->metaObject()->className()) == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "QsciScintilla")
         {
-            ScintillaEdit *editor = (ScintillaEdit*)current;
-            if (editor->modify()) {
+            QsciScintilla *editor = (QsciScintilla*)current;
+            if (editor->isModified()) {
                 bool save = false; 
                 if (!force) {
                     int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to save file?", QMessageBox::Yes|QMessageBox::YesToAll|QMessageBox::No).exec();
@@ -610,142 +622,104 @@ const char *MonospaceFont()
 	}
 	return fontNameDefault;
 }
-
-static const char *verilog_instre1 = "always and assign attribute begin buf bufif0 bufif1 case casex casez cmos deassign default defparam disable edge else end endattribute endcase endfunction endmodule endprimitive endspecify endtable endtask event for force forever fork function highz0 highz1 if ifnone initial inout input integer join medium module large localparam macromodule nand negedge nmos nor not notif0 notif1 or output parameter pmos posedge primitive pull0 pull1 pulldown pullup rcmos real realtime reg release repeat rnmos rpmos rtran rtranif0 rtranif1 scalared signed small specify specparam strength strong0 strong1 supply0 supply1 table task time tran tranif0 tranif1 tri tri0 tri1 triand trior trireg unsigned vectored wait wand weak0 weak1 while wire wor xnor xor alias always_comb always_ff always_latch assert assume automatic before bind bins binsof break constraint context continue cover cross design dist do expect export extends extern final first_match foreach forkjoin iff ignore_bins illegal_bins import incdir include inside instance intersect join_any join_none liblist library matches modport new noshowcancelled null packed priority protected pulsestyle_onevent pulsestyle_ondetect pure rand randc randcase randsequence ref return showcancelled solve tagged this throughout timeprecision timeunit unique unique0 use wait_order wildcard with within class clocking config generate covergroup interface package program property sequence endclass endclocking endconfig endgenerate endgroup endinterface endpackage endprogram endproperty endsequence bit byte cell chandle const coverpoint enum genvar int local logic longint shortint shortreal static string struct super type typedef union var virtual void";
-static const char *verilog_instre2 = "SYNTHESIS $assertkill $assertoff $asserton $bits $bitstoreal $bitstoshortreal $cast $comment $countdrivers $countones $dimensions $display $dist_chi_square $dist_erlang $dist_exponential $dist_normal $dist_poisson $dist_t $dist_uniform $dumpall $dumpfile $dumpflush $dumplimit $dumpoff $dumpon $dumpvars $error $exit $fatal $fclose $fdisplay $fell $feof $ferror $fflush $fgetc $fgets $finish $fmonitor $fopen $fread $fscanf $fseek $fstrobe $ftell $fullskew $fwrite $get_coverage $getpattern $high $history $hold $increment $incsave $info $input $isunbounded $isunknown $itor $key $left $list $load_coverage_db $log $low $monitor $monitoroff $monitoron $nochange $nokey $nolog $onehot $onehot0 $past $period $printtimescale $q_add $q_exam $q_full $q_initialize $q_remove $random $readmemb $readmemh $realtime $realtobits $recovery $recrem $removal $reset $reset_count $reset_value $restart $rewind $right $root $rose $rtoi $sampled $save $scale $scope $set_coverage_db_name $setup $setuphold $sformat $shortrealtobits $showscopes $showvariables $showvars $signed $size $skew $sreadmemb $sreadmemh $sscanf $stable $stime $stop $strobe $swrite $time $timeformat $timescale $timeskew $typename $typeof $uandom $ungetc $unit $unpacked_dimensions $unsigned $upscope $urandom_range $value$plusargs $var $vcdclose $version $warning $width $write";
-
-static const char *vhdl_instre1 = "access after alias all architecture array assert attribute begin block body buffer bus case component configuration constant disconnect downto else elsif end entity exit file for function generate generic group guarded if impure in inertial inout is label library linkage literal loop map new next null of on open others out package port postponed procedure process pure range record register reject report return select severity shared signal subtype then to transport type unaffected units until use variable wait when while with assume assume_guarantee context cover default fairness force parameter property protected release restrict restrict_guarantee sequence strong vmode vprop vunit";
-static const char *vhdl_instre2 = "abs and mod nand nor not or rem rol ror sla sll sra srl xnor xor";
-static const char *vhdl_type1 = "left right low high ascending image value pos val succ pred leftof rightof base range reverse_range length delayed stable quiet transaction event active last_event last_active last_value driving driving_value simple_name path_name instance_name";
-static const char *vhdl_type2 = "now readline read writeline write endfile resolved to_bit to_bitvector to_stdulogic to_stdlogicvector to_stdulogicvector to_x01 to_x01z to_UX01 rising_edge falling_edge is_x shift_left shift_right rotate_left rotate_right resize to_integer to_unsigned to_signed std_match to_01";
-static const char *vhdl_type3 = "std ieee work standard textio std_logic_1164 std_logic_arith std_logic_misc std_logic_signed std_logic_textio std_logic_unsigned numeric_bit numeric_std math_complex math_real vital_primitives vital_timing";
-static const char *vhdl_type4 = "boolean bit character severity_level integer real time delay_length natural positive string bit_vector file_open_kind file_open_status line text side width std_ulogic std_ulogic_vector std_logic std_logic_vector X01 X01Z UX01 UX01Z unsigned signed";
    
-ScintillaEdit *MainWindow::openEditor(int lexer)
+QsciScintilla *MainWindow::openEditor(int lexer)
 {
-    ScintillaEdit *editor = new ScintillaEdit();
-    editor->styleSetFont(STYLE_DEFAULT, MonospaceFont());    
+    QsciScintilla *editor = new QsciScintilla();
+    QFont monospaceFont(MonospaceFont());
+    monospaceFont.setPointSize(10);
+    editor->setFont(monospaceFont);
     editor->setScrollWidth(200);
     editor->setScrollWidthTracking(1);
-    editor->setUndoCollection(false);
+    editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, false);
     editor->setProperty("fold", "1");
     editor->setProperty("fold.compact", "0");
     editor->setProperty("fold.comment", "1");
     editor->setProperty("fold.preprocessor", "1");
     //editor->setWrapMode(true);
-    editor->setMarginWidthN(0, 40); // Line number
-    editor->setMarginWidthN(1, 20); // Foldemargin
-    editor->setMarginMaskN(1, SC_MASK_FOLDERS);
-    editor->setMarginTypeN(1, SC_MARGIN_SYMBOL);
-    editor->setMarginSensitiveN(1, true);
-    editor->markerDefine(SC_MARKNUM_FOLDER, SC_MARK_BOXPLUS);
-    editor->markerDefine(SC_MARKNUM_FOLDEROPEN, SC_MARK_BOXMINUS);
-    editor->markerDefine(SC_MARKNUM_FOLDERSUB, SC_MARK_VLINE);
-    editor->markerDefine(SC_MARKNUM_FOLDERTAIL, SC_MARK_LCORNER);
-    editor->markerDefine(SC_MARKNUM_FOLDEREND, SC_MARK_BOXPLUSCONNECTED);
-    editor->markerDefine(SC_MARKNUM_FOLDEROPENMID, SC_MARK_BOXMINUSCONNECTED);
-    editor->markerDefine(SC_MARKNUM_FOLDERMIDTAIL, SC_MARK_TCORNER);
-    editor->setFoldFlags(16);
-    if (lexer!=0)
-    {
-        if (lexer==SCLEX_SBY) {
-            editor->setLexer(SCLEX_SBY);
-            
-            editor->styleSetFore(SCE_SBY_DEFAULT, 0x000000);
-            editor->styleSetFore(SCE_SBY_COMMENT, 0x808080);
-            editor->styleSetFore(SCE_SBY_SECTION, 0xFF0000);
-            editor->styleSetFore(SCE_SBY_TEXT,    0x000000);
-        } else if (lexer==SCLEX_VERILOG) {
-            editor->setLexer(SCLEX_VERILOG);            
-            editor->setKeyWords(0, verilog_instre1);
-            editor->setKeyWords(1, verilog_instre2);
-            editor->styleSetFore(SCE_V_DEFAULT,         0x000000);
-            editor->styleSetFore(SCE_V_COMMENT,         0x008000);
-            editor->styleSetFore(SCE_V_COMMENTLINE,     0x008000);
-            editor->styleSetFore(SCE_V_COMMENTLINEBANG, 0x008080);
-            editor->styleSetFore(SCE_V_NUMBER,          0xFF8000);
-            editor->styleSetFore(SCE_V_WORD,            0x8000FF);
-            editor->styleSetFore(SCE_V_STRING,          0x808080);
-            editor->styleSetFore(SCE_V_WORD2,           0x8000FF);
-            editor->styleSetFore(SCE_V_WORD3,           0x8000FF);
-            editor->styleSetFore(SCE_V_PREPROCESSOR,    0x804000);
-            editor->styleSetFore(SCE_V_OPERATOR,        0x000080);
-            editor->styleSetFore(SCE_V_IDENTIFIER,      0x000000);
-            editor->styleSetFore(SCE_V_STRINGEOL,       0x808080);
-            editor->styleSetFore(SCE_V_USER,            0x000000);
-            editor->styleSetFore(SCE_V_COMMENT_WORD,    0x008000);
-            editor->styleSetFore(SCE_V_INPUT,           0x000000);
-            editor->styleSetFore(SCE_V_OUTPUT,          0x000000);
-            editor->styleSetFore(SCE_V_INOUT,           0x000000);
-            editor->styleSetFore(SCE_V_PORT_CONNECT,    0x000000);
-        } else if (lexer==SCLEX_VHDL) {
-            editor->setLexer(SCLEX_VHDL);            
-            editor->setKeyWords(0, vhdl_instre1);
-            editor->setKeyWords(1, vhdl_instre2);
-            editor->setKeyWords(2, vhdl_type1);
-            editor->setKeyWords(3, vhdl_type2);
-            editor->setKeyWords(4, vhdl_type3);
-            editor->setKeyWords(5, vhdl_type4);
-            editor->styleSetFore(SCE_VHDL_DEFAULT,          0x000000);
-            editor->styleSetFore(SCE_VHDL_COMMENT,          0x008000);
-            editor->styleSetFore(SCE_VHDL_COMMENTLINEBANG,  0x008000);
-            editor->styleSetFore(SCE_VHDL_NUMBER,           0xFF8000);
-            editor->styleSetFore(SCE_VHDL_STRING,           0x808080);
-            editor->styleSetFore(SCE_VHDL_OPERATOR,         0x000080);
-            editor->styleSetFore(SCE_VHDL_IDENTIFIER,       0x000000);
-            editor->styleSetFore(SCE_VHDL_STRINGEOL,        0x808080);
-            editor->styleSetFore(SCE_VHDL_KEYWORD,          0x8000FF);
-            editor->styleSetFore(SCE_VHDL_STDOPERATOR,      0x8000FF);
-            editor->styleSetFore(SCE_VHDL_ATTRIBUTE,        0x8080FF);
-            editor->styleSetFore(SCE_VHDL_STDFUNCTION,      0x0080FF);
-            editor->styleSetFore(SCE_VHDL_STDPACKAGE,       0x800000);
-            editor->styleSetFore(SCE_VHDL_STDTYPE,          0x8000FF);
-            editor->styleSetFore(SCE_VHDL_USERWORD,         0xB5E71F);
-            editor->styleSetFore(SCE_VHDL_BLOCK_COMMENT,    0x008000);
+    editor->setMarginWidth(0, 40); // Line number
+    //editor->setMarginWidth(1, 20); // Foldemargin
+    //editor->setMarginMarkerMask(1, QsciScintilla::SC_MASK_FOLDERS);
+    //editor->setMarginType(1, QsciScintilla::MarginType::SymbolMargin);
+    //editor->setMarginSensitivity(1, true);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDER, QsciScintilla::SC_MARK_BOXPLUS);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPEN, QsciScintilla::SC_MARK_BOXMINUS);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERSUB, QsciScintilla::SC_MARK_VLINE);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERTAIL, QsciScintilla::SC_MARK_LCORNER);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEREND, QsciScintilla::SC_MARK_BOXPLUSCONNECTED);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPENMID, QsciScintilla::SC_MARK_BOXMINUSCONNECTED);
+    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERMIDTAIL, QsciScintilla::SC_MARK_TCORNER);
+    //editor->setFolding(QsciScintilla::BoxedTreeFoldStyle);
+
+    if (lexer==SCLEX_SBY) {
+        QsciLexerSBY *sbyLexer = new QsciLexerSBY(this);
+        sbyLexer->setDefaultFont(monospaceFont);
+        for (int style = 0; style <= sbyLexer->styleBitsNeeded(); ++style) {
+            sbyLexer->setFont(monospaceFont, style);
+            sbyLexer->setColor(sbyLexer->defaultColor(style), style);
         }
-    }
-    connect(editor, &ScintillaEdit::marginClicked, this, &MainWindow::marginClicked);
+        editor->setLexer(sbyLexer);
+    } else if (lexer==SCLEX_VERILOG) {
+        QsciLexerVerilog *verilogLexer = new QsciLexerVerilog(this);
+        verilogLexer->setDefaultFont(monospaceFont);
+        for (int style = 0; style <= verilogLexer->styleBitsNeeded(); ++style) {
+            verilogLexer->setFont(monospaceFont, style);
+            verilogLexer->setColor(verilogLexer->defaultColor(style), style);
+        }
+        editor->setLexer(verilogLexer);
+    } else if (lexer==SCLEX_VHDL) {
+        QsciLexerVHDL *vhdlLexer = new QsciLexerVHDL(this);
+        vhdlLexer->setDefaultFont(monospaceFont);
+        for (int style = 0; style <= vhdlLexer->styleBitsNeeded(); ++style) {
+            vhdlLexer->setFont(monospaceFont, style);
+            vhdlLexer->setColor(vhdlLexer->defaultColor(style), style);
+        }
+        editor->setLexer(vhdlLexer);
+    }  
+    connect(editor, &QsciScintilla::marginClicked, this, &MainWindow::marginClicked);
     return editor;
 }
 
-void MainWindow::marginClicked(int position, int modifiers, int margin)
+void MainWindow::marginClicked(int margin, int position, Qt::KeyboardModifiers modifiers)
 {
     QWidget *current = centralTabWidget->widget(centralTabWidget->currentIndex());
     if (current!=nullptr)
     {
-        if (QString(current->metaObject()->className()) == "ScintillaEdit")
+        if (QString(current->metaObject()->className()) == "QsciScintilla")
         {
-            ScintillaEdit *editor = (ScintillaEdit*)current;    
+            QsciScintilla *editor = (QsciScintilla*)current;    
             
             if (margin == 1) {
-                int line_number = editor->lineFromPosition(position);
-                editor->toggleFold(line_number);
+                int line = 0;
+                int index = 0;
+                editor->lineIndexFromPosition(position, &line, &index);
+                editor->foldLine(line);
             }
         }
     }
 }
 
-ScintillaEdit *MainWindow::openEditorFile(QString fullpath)
+QsciScintilla *MainWindow::openEditorFile(QString fullpath)
 {
-    ScintillaEdit *editor = openEditor(SCLEX_SBY);
+    QsciScintilla *editor = openEditor(SCLEX_SBY);
     QFile file(fullpath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
         editor->setText(contents.constData());
-        editor->setUndoCollection(true);
-        editor->setSavePoint();
-        editor->gotoPos(0);
+        editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
+        editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
+        editor->setCursorPosition(0, 0);
     }
     return editor;
 }
 
-ScintillaEdit *MainWindow::openEditorText(QString text, int lexer)
+QsciScintilla *MainWindow::openEditorText(QString text, int lexer)
 {
-    ScintillaEdit *editor = openEditor(lexer);
+    QsciScintilla *editor = openEditor(lexer);
     editor->setText(text.toLatin1().data());
-    editor->setUndoCollection(true);
-    editor->setSavePoint();
-    editor->gotoPos(0);
+    editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
+    editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
+    editor->setCursorPosition(0, 0);
     return editor;
 }
 
@@ -760,14 +734,14 @@ void MainWindow::previewOpen(QString content, QString fileName, QString taskName
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
+                    if (QString(current->metaObject()->className()) == "QsciScintilla")
                     {
-                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        QsciScintilla *editor = (QsciScintilla*)current;
                         editor->setReadOnly(false);
                         editor->setText(content.toLatin1().data());
-                        editor->setUndoCollection(true);
-                        editor->setSavePoint();
-                        editor->gotoPos(0);
+                        editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
+                        editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
+                        editor->setCursorPosition(0, 0);
                         editor->setReadOnly(true);
                     } 
                 }
@@ -777,7 +751,7 @@ void MainWindow::previewOpen(QString content, QString fileName, QString taskName
     }
     if (reloadOnly) return;
 
-    ScintillaEdit *editor = openEditorText(content, SCLEX_SBY);
+    QsciScintilla *editor = openEditorText(content, SCLEX_SBY);
     editor->setReadOnly(true);
 
     centralTabWidget->addTab(editor, QIcon(":/icons/resources/script.png"), name);
@@ -797,14 +771,14 @@ void MainWindow::previewLog(QString content, QString fileName, QString taskName,
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
+                    if (QString(current->metaObject()->className()) == "QsciScintilla")
                     {
-                        ScintillaEdit *editor = (ScintillaEdit*)current;
+                        QsciScintilla *editor = (QsciScintilla*)current;
                         editor->setReadOnly(false);
                         editor->setText(content.toLatin1().data());
-                        editor->setUndoCollection(true);
-                        editor->setSavePoint();
-                        editor->gotoPos(0);
+                        editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
+                        editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
+                        editor->setCursorPosition(0, 0);
                         editor->setReadOnly(true);
                     } 
                 }
@@ -814,7 +788,7 @@ void MainWindow::previewLog(QString content, QString fileName, QString taskName,
     }
     if (reloadOnly) return;
 
-    ScintillaEdit *editor = openEditorText(content, 0);
+    QsciScintilla *editor = openEditorText(content, 0);
     editor->setReadOnly(true);
 
     centralTabWidget->addTab(editor, QIcon(":/icons/resources/book.png"), name);
@@ -842,12 +816,12 @@ void MainWindow::previewSource(QString fileName, bool reloadOnly)
         if (fullpath.completeSuffix()=="svh") lexer = SCLEX_VERILOG;
         if (fullpath.completeSuffix()=="vhd") lexer = SCLEX_VHDL;
         if (fullpath.completeSuffix()=="vhdl") lexer = SCLEX_VHDL;
-        ScintillaEdit *editor = openEditorText(contents.constData(), lexer);
+        QsciScintilla *editor = openEditorText(contents.constData(), lexer);
 
-        connect(editor, &ScintillaEdit::modified, [=]() { 
+        connect(editor, &QsciScintilla::modificationChanged, [=](bool modified) {
             for(int i=0;i<centralTabWidget->count();i++) {
                 if(centralTabWidget->tabText(i) == fileName) { 
-                    if(editor->modify()) {
+                    if(modified) {
                         centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                         centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
                     } else {
@@ -879,21 +853,21 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
                 QWidget *current = centralTabWidget->widget(i);
                 if (current!=nullptr)
                 {
-                    if (QString(current->metaObject()->className()) == "ScintillaEdit")
+                    if (QString(current->metaObject()->className()) == "QsciScintilla")
                     {
-                        ScintillaEdit *editor = (ScintillaEdit*)current;                        
-                        if(editor->modify()) {
+                        QsciScintilla *editor = (QsciScintilla*)current;                        
+                        if(editor->isModified()) {
                             int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to reload file?", QMessageBox::Yes|QMessageBox::No).exec();
                             if (result == QMessageBox::No) return;
                         }                        
                         QFile file(path);
                         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                             QByteArray contents = file.readAll();
-                            editor->setUndoCollection(false);
+                            editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, false);
                             editor->setText(contents.constData());
-                            editor->setUndoCollection(true);
-                            editor->setSavePoint();
-                            editor->gotoPos(0);
+                            editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
+                            editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
+                            editor->setCursorPosition(0, 0);
                         }                        
                     } 
                 }
@@ -903,11 +877,11 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
     }
     if (reloadOnly) return;
 
-    ScintillaEdit *editor = openEditorFile(path);
-    connect(editor, &ScintillaEdit::modified, [=]() { 
+    QsciScintilla *editor = openEditorFile(path);
+    connect(editor, &QsciScintilla::modificationChanged, [=](bool modified) {
         for(int i=0;i<centralTabWidget->count();i++) {
             if(centralTabWidget->tabText(i) == name) { 
-                if(editor->modify()) {
+                if(modified) {
                     centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                     centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
                 } else {
