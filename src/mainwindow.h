@@ -33,6 +33,7 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTime>
+#include <QElapsedTimer>
 #include <QFileSystemWatcher>
 #include <QFileInfo>
 #include <QDir>

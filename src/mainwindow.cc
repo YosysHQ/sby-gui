@@ -76,7 +76,7 @@ void MainWindow::openLocation(QFileInfo path)
     refreshLocation = path;
     if(path.exists()) {
         if (path.isDir()) {
-            currentFolder = path.absoluteFilePath();
+            currentFolder.setPath(path.absoluteFilePath());
             currentFolder.setNameFilters(QStringList()<<"*.sby");
             fileList = currentFolder.entryInfoList();
             currentFileList = currentFolder.entryList();
@@ -201,23 +201,13 @@ void MainWindow::directoryChanged(const QString & path)
 {
     QStringList newFileList = getFileList(currentFolder);
 
-#if QT_VERSION_MAJOR >= 6
     QSet<QString> newDirSet(newFileList.begin(), newFileList.end());
     QSet<QString> currentDirSet(currentFileList.begin(), currentFileList.end());
-#else
-    QSet<QString> newDirSet = QSet<QString>::fromList(newFileList);
-    QSet<QString> currentDirSet = QSet<QString>::fromList(currentFileList);
-#endif
     QSet<QString> newFiles = newDirSet - currentDirSet;
     QSet<QString> deletedFiles = currentDirSet - newDirSet;
 
-#if QT_VERSION_MAJOR >= 6
     QStringList newList(newFiles.begin(), newFiles.end());
     QStringList deleteList(deletedFiles.begin(), deletedFiles.end());
-#else
-    QStringList newList = newFiles.toList();
-    QStringList deleteList = deletedFiles.toList();
-#endif
 
     if(!newList.isEmpty())
     {
@@ -840,7 +830,7 @@ void MainWindow::previewSource(QString fileName, bool reloadOnly)
 
 void MainWindow::previewVCD(QString fileName)
 {
-    QProcess::startDetached("gtkwave "+ fileName);
+    QProcess::startDetached("gtkwave",QStringList() << fileName);
 }
 
 void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
