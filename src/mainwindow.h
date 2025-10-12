@@ -20,25 +20,25 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QDir>
+#include <QElapsedTimer>
+#include <QFileInfo>
+#include <QFileSystemWatcher>
+#include <QGridLayout>
 #include <QGroupBox>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
+#include <QPlainTextEdit>
+#include <QProcess>
+#include <QProgressBar>
 #include <QStatusBar>
 #include <QTabWidget>
-#include <QToolBar>
-#include <QGridLayout>
-#include <QProcess>
-#include <QPlainTextEdit>
-#include <QProgressBar>
-#include <QLabel>
 #include <QTime>
-#include <QElapsedTimer>
-#include <QFileSystemWatcher>
-#include <QFileInfo>
-#include <QDir>
-#include <map>
+#include <QToolBar>
 #include <deque>
+#include <map>
 #include "qsbyitem.h"
 
 class QsciScintilla;
@@ -56,7 +56,7 @@ class MainWindow : public QMainWindow
     QGroupBox *generateFileBox(SBYFile *file);
 
     void openLocation(QFileInfo path);
-    void removeLayoutItems(QLayout* layout);
+    void removeLayoutItems(QLayout *layout);
     void editOpen(QString path, QString fileName, bool reloadOnly);
     void previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
@@ -68,7 +68,7 @@ class MainWindow : public QMainWindow
     void refreshView();
     void appendLog(QString logline);
     void showTime();
-    virtual void closeEvent(QCloseEvent * event);
+    virtual void closeEvent(QCloseEvent *event);
     void save_sby(int index);
     bool closeTab(int index, bool forceSave);
     QStringList getFileList(QDir path);
@@ -83,9 +83,10 @@ class MainWindow : public QMainWindow
     void close_editor();
     void close_all();
 
-    void directoryChanged(const QString & path);
-    void fileChanged(const QString & path);
+    void directoryChanged(const QString &path);
+    void fileChanged(const QString &path);
     void marginClicked(int margin, int position, Qt::KeyboardModifiers modifiers);
+
   protected:
     QTabWidget *tabWidget;
     QTabWidget *centralTabWidget;
@@ -122,7 +123,7 @@ class MainWindow : public QMainWindow
 
     QStringList currentFileList;
     std::vector<std::unique_ptr<SBYFile>> files;
-    QMap<QString, SBYFile*> fileMap;
+    QMap<QString, SBYFile *> fileMap;
     std::map<QString, std::unique_ptr<QSBYItem>> items;
     std::deque<QString> taskList;
 };

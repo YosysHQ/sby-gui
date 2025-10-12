@@ -5,14 +5,14 @@
 
 #include <Qsci/qsciglobal.h>
 #include <Qsci/qscilexer.h>
- 
 
 class QsciLexerSBY : public QsciLexer
 {
     Q_OBJECT
 
-public:
-    enum {
+  public:
+    enum
+    {
         Default = 0,
         Comment = 1,
         Section = 2,
@@ -33,8 +33,8 @@ public:
     QColor defaultColor(int style) const;
 
     QString description(int style) const;
-                                               
-private:
+
+  private:
     QsciLexerSBY(const QsciLexerSBY &);
     QsciLexerSBY &operator=(const QsciLexerSBY &);
 };

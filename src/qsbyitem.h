@@ -1,12 +1,12 @@
 #ifndef QSBYITEM_H
 #define QSBYITEM_H
 
-#include <QGroupBox>
-#include <QVBoxLayout>
-#include <QProgressBar>
 #include <QAction>
-#include <QProcess>
+#include <QGroupBox>
 #include <QLabel>
+#include <QProcess>
+#include <QProgressBar>
+#include <QVBoxLayout>
 #include "sbyitem.h"
 
 class QSBYItem : public QGroupBox
@@ -14,13 +14,13 @@ class QSBYItem : public QGroupBox
     Q_OBJECT
 
   public:
-    QSBYItem(const QString & title, SBYItem *item, QSBYItem* top, QWidget *parent = 0);
+    QSBYItem(const QString &title, SBYItem *item, QSBYItem *top, QWidget *parent = 0);
     virtual ~QSBYItem();
     void runSBYTask();
     void refreshView();
     QString getName();
     void stopProcess();
-    QSBYItem* getParent() { return top; }
+    QSBYItem *getParent() { return top; }
   protected Q_SLOTS:
     void printOutput();
   Q_SIGNALS:
@@ -32,7 +32,8 @@ class QSBYItem : public QGroupBox
     void previewLog(QString content, QString fileName, QString taskName, bool reloadOnly);
     void previewSource(QString fileName, bool reloadOnly);
     void previewVCD(QString fileName);
-  protected:    
+
+  protected:
     QProgressBar *progressBar;
     QAction *actionStatus;
     QAction *actionPlay;

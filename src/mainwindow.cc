@@ -19,43 +19,39 @@
 
 #include "mainwindow.h"
 #include <QAction>
+#include <QFile>
 #include <QFileDialog>
+#include <QGraphicsColorizeEffect>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QIcon>
+#include <QMessageBox>
+#include <QProgressBar>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QSplitter>
 #include <QTabBar>
-#include <QProgressBar>
-#include <QHBoxLayout>
 #include <QTextCursor>
 #include <QtXml>
-#include <QFile>
-#include <QGraphicsColorizeEffect>
-#include <QMessageBox>
 #include "Qsci/qscilexerverilog.h"
 #include "Qsci/qscilexervhdl.h"
 #include "Qsci/qsciscintilla.h"
+#include "SciLexer.h"
 #include "lexers/LexSBY.h"
 #include "qscilexersby.h"
-#include "../src/Catalogue.h"
-#include "SciLexer.h"
-
-
+// clang-format off
+#include "Catalogue.h"
+// clang-format on
 
 static void initBasenameResource() { Q_INIT_RESOURCE(base); }
 
-void MainWindow::removeLayoutItems(QLayout* layout)
+void MainWindow::removeLayoutItems(QLayout *layout)
 {
-    while(layout->count()!=0)
-    {
-        QLayoutItem* child = layout->takeAt(0);
-        if(child->layout() != 0)
-        {
+    while (layout->count() != 0) {
+        QLayoutItem *child = layout->takeAt(0);
+        if (child->layout() != 0) {
             removeLayoutItems(child->layout());
-        }
-        else if(child->widget() != 0)
-        {
+        } else if (child->widget() != 0) {
             delete child->widget();
         }
 
@@ -66,7 +62,7 @@ void MainWindow::removeLayoutItems(QLayout* layout)
 QStringList MainWindow::getFileList(QDir path)
 {
     QDir folder(path);
-    folder.setNameFilters(QStringList()<<"*.sby");
+    folder.setNameFilters(QStringList() << "*.sby");
     return folder.entryList();
 }
 
@@ -74,23 +70,21 @@ void MainWindow::openLocation(QFileInfo path)
 {
     QFileInfoList fileList;
     refreshLocation = path;
-    if(path.exists()) {
+    if (path.exists()) {
         if (path.isDir()) {
             currentFolder.setPath(path.absoluteFilePath());
-            currentFolder.setNameFilters(QStringList()<<"*.sby");
+            currentFolder.setNameFilters(QStringList() << "*.sby");
             fileList = currentFolder.entryInfoList();
             currentFileList = currentFolder.entryList();
         } else {
-            QMessageBox::critical(this, "SBY Gui",
-                                "Invalid file location",
-                                QMessageBox::Ok);
+            QMessageBox::critical(this, "SBY Gui", "Invalid file location", QMessageBox::Ok);
             return;
         }
         fileWatcher->addPath(currentFolder.canonicalPath());
-        for(auto name : fileList) {
+        for (auto name : fileList) {
             fileWatcher->addPath(name.absoluteFilePath());
-        }        
-    } 
+        }
+    }
 
     items.clear();
     removeLayoutItems(grid);
@@ -100,8 +94,7 @@ void MainWindow::openLocation(QFileInfo path)
 
     // create new widgets
     int cnt = 0;
-    for (auto file : fileList)
-    {
+    for (auto file : fileList) {
         std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(file);
         f->parse();
         f->update();
@@ -109,11 +102,11 @@ void MainWindow::openLocation(QFileInfo path)
         fileMap.insert(file.absoluteFilePath(), files.back().get());
     }
 
-    for(const auto & file : files) {
-        
+    for (const auto &file : files) {
+
         grid->addWidget(generateFileBox(file.get()), cnt++, 0);
     }
-    grid->setRowStretch(cnt++,1);
+    grid->setRowStretch(cnt++, 1);
 }
 MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 {
@@ -140,7 +133,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 
     grid = new QGridLayout;
 
-    QWidget *container = new QWidget();    
+    QWidget *container = new QWidget();
     container->setLayout(grid);
 
     QScrollArea *scrollArea = new QScrollArea();
@@ -173,7 +166,7 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
     log = new QPlainTextEdit();
     log->setReadOnly(true);
     log->setFont(f);
-    tabWidget->addTab(log, "Log");    
+    tabWidget->addTab(log, "Log");
 
     centralTabWidget = new QTabWidget();
     centralTabWidget->setTabsClosable(true);
@@ -191,13 +184,13 @@ MainWindow::MainWindow(QString path, QWidget *parent) : QMainWindow(parent)
 
     taskTimer = new QElapsedTimer();
     taskTimer->start();
-    
+
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::showTime);
     timer->start(1000);
 }
 
-void MainWindow::directoryChanged(const QString & path)
+void MainWindow::directoryChanged(const QString &path)
 {
     QStringList newFileList = getFileList(currentFolder);
 
@@ -209,9 +202,8 @@ void MainWindow::directoryChanged(const QString & path)
     QStringList newList(newFiles.begin(), newFiles.end());
     QStringList deleteList(deletedFiles.begin(), deletedFiles.end());
 
-    if(!newList.isEmpty())
-    {
-        for(auto name : newList) {
+    if (!newList.isEmpty()) {
+        for (auto name : newList) {
             QString filename = QDir(currentFolder).filePath(name);
             fileWatcher->addPath(filename);
             std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(QFileInfo(filename));
@@ -223,67 +215,63 @@ void MainWindow::directoryChanged(const QString & path)
             grid->addWidget(generateFileBox(files.back().get()), (int)files.size(), 0);
         }
     }
-    if(!deleteList.isEmpty())
-    {
-        for(auto name : deleteList) {
+    if (!deleteList.isEmpty()) {
+        for (auto name : deleteList) {
             QString filename = QDir(currentFolder).filePath(name);
             fileWatcher->removePath(filename);
             SBYFile *file = fileMap[filename];
-            for (auto const & task : file->getTasks())
-            {
+            for (auto const &task : file->getTasks()) {
                 QString name = file->getName() + "#" + task->getName();
                 auto it = items.find(name);
-                if (it!=items.end()) {
+                if (it != items.end()) {
                     items.erase(it);
                 }
             }
             auto it = items.find(file->getName());
-            if (it!=items.end()) {
+            if (it != items.end()) {
                 items.erase(it);
             }
             auto itFile = files.begin();
-            while(itFile != files.end()) {
+            while (itFile != files.end()) {
                 if (itFile->get()->getFullPath() == filename) {
                     files.erase(itFile);
-                }
-                else ++itFile;
+                } else
+                    ++itFile;
             }
         }
-    }    
+    }
     currentFileList = newFileList;
 }
 
-void MainWindow::fileChanged(const QString & filename)
+void MainWindow::fileChanged(const QString &filename)
 {
     SBYFile *file = fileMap[filename];
     std::unique_ptr<SBYFile> f = std::make_unique<SBYFile>(QFileInfo(filename));
     f->parse();
     f->update();
-    QSet<QString> newTaskSet = f->getTasksSet(); 
-    QSet<QString> currTaskSet = file->getTasksSet(); 
+    QSet<QString> newTaskSet = f->getTasksSet();
+    QSet<QString> currTaskSet = file->getTasksSet();
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
-    if(!deletedTasks.isEmpty())
-    {
-        for(auto name : deletedTasks) {
+    if (!deletedTasks.isEmpty()) {
+        for (auto name : deletedTasks) {
             QString n = file->getFileName() + "#" + name;
             auto it = items.begin();
-            while(it != items.end()) {
+            while (it != items.end()) {
                 if (it->second->getName() == n) {
                     items.erase(it);
-                    break;                    
-                }
-                else ++it;
+                    break;
+                } else
+                    ++it;
             }
         }
-    } 
-    
+    }
+
     file->refresh();
 
-    if(!newTasks.isEmpty())
-    {
-        for(auto name : newTasks) {
+    if (!newTasks.isEmpty()) {
+        for (auto name : newTasks) {
             QSBYItem *fileBox = items[file->getFileName()].get();
             std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(name, file->getTask(name), fileBox, this);
             QString newname = groupBox->getName();
@@ -297,8 +285,7 @@ void MainWindow::fileChanged(const QString & filename)
             connect(groupBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
             connect(groupBox.get(), &QSBYItem::previewVCD, this, &MainWindow::previewVCD);
 
-
-            fileBox->layout()->addWidget(groupBox.get());            
+            fileBox->layout()->addWidget(groupBox.get());
             items.emplace(std::make_pair(newname, std::move(groupBox)));
         }
     }
@@ -307,7 +294,7 @@ void MainWindow::fileChanged(const QString & filename)
 
 void MainWindow::showTime()
 {
-    if (process==nullptr)  {
+    if (process == nullptr) {
         timeDisplay->setText("");
         return;
     }
@@ -402,55 +389,52 @@ void MainWindow::createMenusAndBars()
     mainToolBar->addAction(actionRefresh);
 
     actionPlay = new QAction("Play", this);
-    actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png")); 
+    actionPlay->setIcon(QIcon(":/icons/resources/media-playback-start.png"));
     mainToolBar->addAction(actionPlay);
     actionStop = new QAction("Stop", this);
-    actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));    
+    actionStop->setIcon(QIcon(":/icons/resources/media-playback-stop.png"));
     actionStop->setEnabled(false);
     mainToolBar->addAction(actionStop);
-    connect(actionPlay, &QAction::triggered, [=]() { 
-        for (auto & item : files)
-        {
-            if (item->haveTasks())  {
-                for(const auto & task : item->getTasks()) {
-                    if (task->getStatusColor()!=1)
-                        Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName()); 
+    connect(actionPlay, &QAction::triggered, [=]() {
+        for (auto &item : files) {
+            if (item->haveTasks()) {
+                for (const auto &task : item->getTasks()) {
+                    if (task->getStatusColor() != 1)
+                        Q_EMIT startTask(item->getFileName() + "#" + task->getTaskName());
                 }
             } else {
-                if (item->getStatusColor()!=1)
-                    Q_EMIT startTask(item->getFileName()); 
+                if (item->getStatusColor() != 1)
+                    Q_EMIT startTask(item->getFileName());
             }
         }
-    });   
-    connect(actionStop, &QAction::triggered, [=]() { 
-        if (taskList.size()>0)  {        
-            QString name = taskList.front();        
+    });
+    connect(actionStop, &QAction::triggered, [=]() {
+        if (taskList.size() > 0) {
+            QString name = taskList.front();
             taskList.clear();
             taskList.push_back(name); // Put back one to finish
             items[name]->stopProcess();
-        }         
-     });
+        }
+    });
 }
 
 void MainWindow::save_sby(int index)
 {
     QWidget *current = centralTabWidget->widget(index);
-    if (current!=nullptr)
-    {
-        if (QString(current->metaObject()->className()) == "QsciScintilla")
-        {
-            QsciScintilla *editor = (QsciScintilla*)current;
-            if (editor->isModified()){
+    if (current != nullptr) {
+        if (QString(current->metaObject()->className()) == "QsciScintilla") {
+            QsciScintilla *editor = (QsciScintilla *)current;
+            if (editor->isModified()) {
                 QString name = centralTabWidget->tabText(index);
-                QFileInfo filepath(currentFolder,name);
+                QFileInfo filepath(currentFolder, name);
                 QFile file(filepath.absoluteFilePath());
                 if (file.open(QIODevice::WriteOnly)) {
                     QByteArray contents = editor->text().toUtf8();
                     file.write(contents);
                     file.close();
-                    editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);                    
+                    editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
                     centralTabWidget->tabBar()->setTabTextColor(index, Qt::black);
-                    if (filepath.completeSuffix()=="sby") 
+                    if (filepath.completeSuffix() == "sby")
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/script_edit.png"));
                     else
                         centralTabWidget->setTabIcon(index, QIcon(":/icons/resources/page_code.png"));
@@ -463,12 +447,10 @@ void MainWindow::save_sby(int index)
 void MainWindow::save_all()
 {
     if (actionStop->isEnabled()) {
-        QMessageBox::information(this, "SBY Gui",
-                                "The document can not be saved until tasks are done",
-                                QMessageBox::Ok);
+        QMessageBox::information(this, "SBY Gui", "The document can not be saved until tasks are done",
+                                 QMessageBox::Ok);
     } else {
-        for (int i=0;i<centralTabWidget->count();i++)
-        {
+        for (int i = 0; i < centralTabWidget->count(); i++) {
             save_sby(i);
         }
     }
@@ -477,9 +459,8 @@ void MainWindow::save_all()
 void MainWindow::save_file()
 {
     if (actionStop->isEnabled()) {
-        QMessageBox::information(this, "SBY Gui",
-                                "The document can not be saved until tasks are done",
-                                QMessageBox::Ok);
+        QMessageBox::information(this, "SBY Gui", "The document can not be saved until tasks are done",
+                                 QMessageBox::Ok);
     } else {
         save_sby(centralTabWidget->currentIndex());
     }
@@ -487,44 +468,40 @@ void MainWindow::save_file()
 
 void MainWindow::open_folder()
 {
-    QString folderName =
-            QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                QString(),
-                                                QFileDialog::ShowDirsOnly
-                                                | QFileDialog::DontResolveSymlinks);
+    QString folderName = QFileDialog::getExistingDirectory(
+            this, tr("Open Directory"), QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (!folderName.isEmpty()) {
         openLocation(QFileInfo(folderName));
     }
 }
 
-void MainWindow::close_editor()
-{
-    closeTab(centralTabWidget->currentIndex(), false);
-}
+void MainWindow::close_editor() { closeTab(centralTabWidget->currentIndex(), false); }
 
 void MainWindow::close_all()
 {
     bool forceSave = false;
-    for (int i=centralTabWidget->count()-1;i>=0;i--)
-    {
+    for (int i = centralTabWidget->count() - 1; i >= 0; i--) {
         forceSave = closeTab(i, forceSave);
     }
 }
 
-bool MainWindow::closeTab(int index, bool forceSave) { 
+bool MainWindow::closeTab(int index, bool forceSave)
+{
     bool force = forceSave;
     QWidget *current = centralTabWidget->widget(index);
-    if (current!=nullptr)
-    {
-        if (QString(current->metaObject()->className()) == "QsciScintilla")
-        {
-            QsciScintilla *editor = (QsciScintilla*)current;
+    if (current != nullptr) {
+        if (QString(current->metaObject()->className()) == "QsciScintilla") {
+            QsciScintilla *editor = (QsciScintilla *)current;
             if (editor->isModified()) {
-                bool save = false; 
+                bool save = false;
                 if (!force) {
-                    int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to save file?", QMessageBox::Yes|QMessageBox::YesToAll|QMessageBox::No).exec();
-                    if (result == QMessageBox::Yes || result == QMessageBox::YesToAll) save = true;
-                    if (result == QMessageBox::YesToAll) force = true;
+                    int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to save file?",
+                                             QMessageBox::Yes | QMessageBox::YesToAll | QMessageBox::No)
+                                         .exec();
+                    if (result == QMessageBox::Yes || result == QMessageBox::YesToAll)
+                        save = true;
+                    if (result == QMessageBox::YesToAll)
+                        force = true;
                 }
                 if (save)
                     save_sby(index);
@@ -539,34 +516,33 @@ bool MainWindow::closeTab(int index, bool forceSave) {
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
-    if (QMessageBox::Yes == QMessageBox(QMessageBox::Information, "SBY Gui", "Are you sure you want to quit?", QMessageBox::Yes|QMessageBox::No).exec()) 
-    {
+    if (QMessageBox::Yes == QMessageBox(QMessageBox::Information, "SBY Gui", "Are you sure you want to quit?",
+                                        QMessageBox::Yes | QMessageBox::No)
+                                    .exec()) {
         close_all();
-        event->accept();    
-    }    
+        event->accept();
+    }
 }
 
 void MainWindow::taskExecuted()
-{   
+{
     taskList.pop_front();
-    if (taskList.size()>0)  {        
-        QString name = taskList.front();        
+    if (taskList.size() > 0) {
+        QString name = taskList.front();
         items[name]->runSBYTask();
     } else {
-        actionPlay->setEnabled(true); 
-        actionStop->setEnabled(false); 
+        actionPlay->setEnabled(true);
+        actionStop->setEnabled(false);
     }
 }
 
 void MainWindow::startTask(QString name)
-{   
-    actionPlay->setEnabled(false); 
+{
+    actionPlay->setEnabled(false);
     actionStop->setEnabled(true);
-    if (std::find(taskList.begin(),taskList.end(),name) == taskList.end()) 
-    {
+    if (std::find(taskList.begin(), taskList.end(), name) == taskList.end()) {
         taskList.push_back(name);
-        if (taskList.size()==1)         
-        {
+        if (taskList.size() == 1) {
             items[name]->runSBYTask();
         }
     }
@@ -584,9 +560,9 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
     connect(fileBox.get(), &QSBYItem::previewSource, this, &MainWindow::previewSource);
     connect(fileBox.get(), &QSBYItem::previewVCD, this, &MainWindow::previewVCD);
 
-    for (auto const & task : file->getTasks())
-    {
-        std::unique_ptr<QSBYItem> groupBox = std::make_unique<QSBYItem>(task->getName(), task.get(), fileBox.get(), this);
+    for (auto const &task : file->getTasks()) {
+        std::unique_ptr<QSBYItem> groupBox =
+                std::make_unique<QSBYItem>(task->getName(), task.get(), fileBox.get(), this);
         QString name = groupBox->getName();
         connect(groupBox.get(), &QSBYItem::appendLog, this, &MainWindow::appendLog);
         connect(groupBox.get(), &QSBYItem::editOpen, this, &MainWindow::editOpen);
@@ -605,14 +581,14 @@ QGroupBox *MainWindow::generateFileBox(SBYFile *file)
 
 const char *MonospaceFont()
 {
-	static char fontNameDefault[200] = "";
-	if (!fontNameDefault[0]) {
+    static char fontNameDefault[200] = "";
+    if (!fontNameDefault[0]) {
         const QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-		strcpy(fontNameDefault, font.family().toUtf8());
-	}
-	return fontNameDefault;
+        strcpy(fontNameDefault, font.family().toUtf8());
+    }
+    return fontNameDefault;
 }
-   
+
 QsciScintilla *MainWindow::openEditor(int lexer)
 {
     QsciScintilla *editor = new QsciScintilla();
@@ -626,22 +602,22 @@ QsciScintilla *MainWindow::openEditor(int lexer)
     editor->setProperty("fold.compact", "0");
     editor->setProperty("fold.comment", "1");
     editor->setProperty("fold.preprocessor", "1");
-    //editor->setWrapMode(true);
+    // editor->setWrapMode(true);
     editor->setMarginWidth(0, 40); // Line number
-    //editor->setMarginWidth(1, 20); // Foldemargin
-    //editor->setMarginMarkerMask(1, QsciScintilla::SC_MASK_FOLDERS);
-    //editor->setMarginType(1, QsciScintilla::MarginType::SymbolMargin);
-    //editor->setMarginSensitivity(1, true);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDER, QsciScintilla::SC_MARK_BOXPLUS);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPEN, QsciScintilla::SC_MARK_BOXMINUS);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERSUB, QsciScintilla::SC_MARK_VLINE);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERTAIL, QsciScintilla::SC_MARK_LCORNER);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEREND, QsciScintilla::SC_MARK_BOXPLUSCONNECTED);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPENMID, QsciScintilla::SC_MARK_BOXMINUSCONNECTED);
-    //editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERMIDTAIL, QsciScintilla::SC_MARK_TCORNER);
-    //editor->setFolding(QsciScintilla::BoxedTreeFoldStyle);
+    // editor->setMarginWidth(1, 20); // Foldemargin
+    // editor->setMarginMarkerMask(1, QsciScintilla::SC_MASK_FOLDERS);
+    // editor->setMarginType(1, QsciScintilla::MarginType::SymbolMargin);
+    // editor->setMarginSensitivity(1, true);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDER, QsciScintilla::SC_MARK_BOXPLUS);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPEN, QsciScintilla::SC_MARK_BOXMINUS);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERSUB, QsciScintilla::SC_MARK_VLINE);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERTAIL, QsciScintilla::SC_MARK_LCORNER);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEREND, QsciScintilla::SC_MARK_BOXPLUSCONNECTED);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDEROPENMID, QsciScintilla::SC_MARK_BOXMINUSCONNECTED);
+    // editor->markerDefine(QsciScintilla::SC_MARKNUM_FOLDERMIDTAIL, QsciScintilla::SC_MARK_TCORNER);
+    // editor->setFolding(QsciScintilla::BoxedTreeFoldStyle);
 
-    if (lexer==SCLEX_SBY) {
+    if (lexer == SCLEX_SBY) {
         QsciLexerSBY *sbyLexer = new QsciLexerSBY(this);
         sbyLexer->setDefaultFont(monospaceFont);
         for (int style = 0; style <= sbyLexer->styleBitsNeeded(); ++style) {
@@ -649,7 +625,7 @@ QsciScintilla *MainWindow::openEditor(int lexer)
             sbyLexer->setColor(sbyLexer->defaultColor(style), style);
         }
         editor->setLexer(sbyLexer);
-    } else if (lexer==SCLEX_VERILOG) {
+    } else if (lexer == SCLEX_VERILOG) {
         QsciLexerVerilog *verilogLexer = new QsciLexerVerilog(this);
         verilogLexer->setDefaultFont(monospaceFont);
         for (int style = 0; style <= verilogLexer->styleBitsNeeded(); ++style) {
@@ -657,7 +633,7 @@ QsciScintilla *MainWindow::openEditor(int lexer)
             verilogLexer->setColor(verilogLexer->defaultColor(style), style);
         }
         editor->setLexer(verilogLexer);
-    } else if (lexer==SCLEX_VHDL) {
+    } else if (lexer == SCLEX_VHDL) {
         QsciLexerVHDL *vhdlLexer = new QsciLexerVHDL(this);
         vhdlLexer->setDefaultFont(monospaceFont);
         for (int style = 0; style <= vhdlLexer->styleBitsNeeded(); ++style) {
@@ -665,7 +641,7 @@ QsciScintilla *MainWindow::openEditor(int lexer)
             vhdlLexer->setColor(vhdlLexer->defaultColor(style), style);
         }
         editor->setLexer(vhdlLexer);
-    }  
+    }
     connect(editor, &QsciScintilla::marginClicked, this, &MainWindow::marginClicked);
     return editor;
 }
@@ -673,12 +649,10 @@ QsciScintilla *MainWindow::openEditor(int lexer)
 void MainWindow::marginClicked(int margin, int position, Qt::KeyboardModifiers modifiers)
 {
     QWidget *current = centralTabWidget->widget(centralTabWidget->currentIndex());
-    if (current!=nullptr)
-    {
-        if (QString(current->metaObject()->className()) == "QsciScintilla")
-        {
-            QsciScintilla *editor = (QsciScintilla*)current;    
-            
+    if (current != nullptr) {
+        if (QString(current->metaObject()->className()) == "QsciScintilla") {
+            QsciScintilla *editor = (QsciScintilla *)current;
+
             if (margin == 1) {
                 int line = 0;
                 int index = 0;
@@ -716,30 +690,29 @@ QsciScintilla *MainWindow::openEditorText(QString text, int lexer)
 void MainWindow::previewOpen(QString content, QString fileName, QString taskName, bool reloadOnly)
 {
     QString name = fileName + "#" + taskName;
- 
-    for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == name) { 
-            centralTabWidget->setCurrentIndex(i); 
+
+    for (int i = 0; i < centralTabWidget->count(); i++) {
+        if (centralTabWidget->tabText(i) == name) {
+            centralTabWidget->setCurrentIndex(i);
             if (reloadOnly) {
                 QWidget *current = centralTabWidget->widget(i);
-                if (current!=nullptr)
-                {
-                    if (QString(current->metaObject()->className()) == "QsciScintilla")
-                    {
-                        QsciScintilla *editor = (QsciScintilla*)current;
+                if (current != nullptr) {
+                    if (QString(current->metaObject()->className()) == "QsciScintilla") {
+                        QsciScintilla *editor = (QsciScintilla *)current;
                         editor->setReadOnly(false);
                         editor->setText(content.toLatin1().data());
                         editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
                         editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
                         editor->setCursorPosition(0, 0);
                         editor->setReadOnly(true);
-                    } 
+                    }
                 }
             }
             return;
         }
     }
-    if (reloadOnly) return;
+    if (reloadOnly)
+        return;
 
     QsciScintilla *editor = openEditorText(content, SCLEX_SBY);
     editor->setReadOnly(true);
@@ -751,32 +724,32 @@ void MainWindow::previewOpen(QString content, QString fileName, QString taskName
 void MainWindow::previewLog(QString content, QString fileName, QString taskName, bool reloadOnly)
 {
     QString name = fileName;
-    if (!taskName.isEmpty()) name+= "#" + taskName;
+    if (!taskName.isEmpty())
+        name += "#" + taskName;
     name += ".log";
- 
-    for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == name) { 
-            centralTabWidget->setCurrentIndex(i); 
+
+    for (int i = 0; i < centralTabWidget->count(); i++) {
+        if (centralTabWidget->tabText(i) == name) {
+            centralTabWidget->setCurrentIndex(i);
             if (reloadOnly) {
                 QWidget *current = centralTabWidget->widget(i);
-                if (current!=nullptr)
-                {
-                    if (QString(current->metaObject()->className()) == "QsciScintilla")
-                    {
-                        QsciScintilla *editor = (QsciScintilla*)current;
+                if (current != nullptr) {
+                    if (QString(current->metaObject()->className()) == "QsciScintilla") {
+                        QsciScintilla *editor = (QsciScintilla *)current;
                         editor->setReadOnly(false);
                         editor->setText(content.toLatin1().data());
                         editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
                         editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
                         editor->setCursorPosition(0, 0);
                         editor->setReadOnly(true);
-                    } 
+                    }
                 }
-            }            
-            return; 
-        } 
+            }
+            return;
+        }
     }
-    if (reloadOnly) return;
+    if (reloadOnly)
+        return;
 
     QsciScintilla *editor = openEditorText(content, 0);
     editor->setReadOnly(true);
@@ -787,39 +760,46 @@ void MainWindow::previewLog(QString content, QString fileName, QString taskName,
 
 void MainWindow::previewSource(QString fileName, bool reloadOnly)
 {
-    for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == fileName) { 
-            centralTabWidget->setCurrentIndex(i); 
-            return; 
-        } 
+    for (int i = 0; i < centralTabWidget->count(); i++) {
+        if (centralTabWidget->tabText(i) == fileName) {
+            centralTabWidget->setCurrentIndex(i);
+            return;
+        }
     }
-    if (reloadOnly) return;
+    if (reloadOnly)
+        return;
 
-    QFileInfo fullpath(currentFolder,fileName);
+    QFileInfo fullpath(currentFolder, fileName);
     QFile file(fullpath.canonicalFilePath());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray contents = file.readAll();
         int lexer = 0;
-        if (fullpath.completeSuffix()=="v") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()=="sv") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()=="vh") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()=="svh") lexer = SCLEX_VERILOG;
-        if (fullpath.completeSuffix()=="vhd") lexer = SCLEX_VHDL;
-        if (fullpath.completeSuffix()=="vhdl") lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix() == "v")
+            lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix() == "sv")
+            lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix() == "vh")
+            lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix() == "svh")
+            lexer = SCLEX_VERILOG;
+        if (fullpath.completeSuffix() == "vhd")
+            lexer = SCLEX_VHDL;
+        if (fullpath.completeSuffix() == "vhdl")
+            lexer = SCLEX_VHDL;
         QsciScintilla *editor = openEditorText(contents.constData(), lexer);
 
         connect(editor, &QsciScintilla::modificationChanged, [=](bool modified) {
-            for(int i=0;i<centralTabWidget->count();i++) {
-                if(centralTabWidget->tabText(i) == fileName) { 
-                    if(modified) {
+            for (int i = 0; i < centralTabWidget->count(); i++) {
+                if (centralTabWidget->tabText(i) == fileName) {
+                    if (modified) {
                         centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                         centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
                     } else {
                         centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
                         centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/page_code.png"));
                     }
-                    return; 
-                } 
+                    return;
+                }
             }
         });
 
@@ -828,28 +808,26 @@ void MainWindow::previewSource(QString fileName, bool reloadOnly)
     }
 }
 
-void MainWindow::previewVCD(QString fileName)
-{
-    QProcess::startDetached("gtkwave",QStringList() << fileName);
-}
+void MainWindow::previewVCD(QString fileName) { QProcess::startDetached("gtkwave", QStringList() << fileName); }
 
 void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
 {
     QString name = fileName;
-    for(int i=0;i<centralTabWidget->count();i++) {
-        if(centralTabWidget->tabText(i) == name) { 
-            centralTabWidget->setCurrentIndex(i); 
+    for (int i = 0; i < centralTabWidget->count(); i++) {
+        if (centralTabWidget->tabText(i) == name) {
+            centralTabWidget->setCurrentIndex(i);
             if (reloadOnly) {
                 QWidget *current = centralTabWidget->widget(i);
-                if (current!=nullptr)
-                {
-                    if (QString(current->metaObject()->className()) == "QsciScintilla")
-                    {
-                        QsciScintilla *editor = (QsciScintilla*)current;                        
-                        if(editor->isModified()) {
-                            int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to reload file?", QMessageBox::Yes|QMessageBox::No).exec();
-                            if (result == QMessageBox::No) return;
-                        }                        
+                if (current != nullptr) {
+                    if (QString(current->metaObject()->className()) == "QsciScintilla") {
+                        QsciScintilla *editor = (QsciScintilla *)current;
+                        if (editor->isModified()) {
+                            int result = QMessageBox(QMessageBox::Information, "SBY Gui", "Do you wish to reload file?",
+                                                     QMessageBox::Yes | QMessageBox::No)
+                                                 .exec();
+                            if (result == QMessageBox::No)
+                                return;
+                        }
                         QFile file(path);
                         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                             QByteArray contents = file.readAll();
@@ -858,28 +836,29 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
                             editor->SendScintilla(QsciScintilla::SCI_SETUNDOCOLLECTION, true);
                             editor->SendScintilla(QsciScintilla::SCI_SETSAVEPOINT);
                             editor->setCursorPosition(0, 0);
-                        }                        
-                    } 
+                        }
+                    }
                 }
-            }            
-            return; 
-        } 
+            }
+            return;
+        }
     }
-    if (reloadOnly) return;
+    if (reloadOnly)
+        return;
 
     QsciScintilla *editor = openEditorFile(path);
     connect(editor, &QsciScintilla::modificationChanged, [=](bool modified) {
-        for(int i=0;i<centralTabWidget->count();i++) {
-            if(centralTabWidget->tabText(i) == name) { 
-                if(modified) {
+        for (int i = 0; i < centralTabWidget->count(); i++) {
+            if (centralTabWidget->tabText(i) == name) {
+                if (modified) {
                     centralTabWidget->tabBar()->setTabTextColor(i, Qt::red);
                     centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/disk.png"));
                 } else {
                     centralTabWidget->tabBar()->setTabTextColor(i, Qt::black);
                     centralTabWidget->setTabIcon(i, QIcon(":/icons/resources/script_edit.png"));
                 }
-                return; 
-            } 
+                return;
+            }
         }
     });
 
@@ -890,7 +869,7 @@ void MainWindow::editOpen(QString path, QString fileName, bool reloadOnly)
 void MainWindow::appendLog(QString logline)
 {
     log->moveCursor(QTextCursor::End);
-    log->insertPlainText (logline);
+    log->insertPlainText(logline);
     log->moveCursor(QTextCursor::End);
 }
 
@@ -900,9 +879,9 @@ void MainWindow::refreshView()
     appendLog("All processes killed\n");
 }
 
-
 void MainWindow::about()
 {
-    QMessageBox::about(this, tr("SBY Gui"), tr("The <b>SymbiYosys GUI</b> is part of "
-                                               "<br/><b>YosysHQ</b> solution for formal verification."));
+    QMessageBox::about(this, tr("SBY Gui"),
+                       tr("The <b>SymbiYosys GUI</b> is part of "
+                          "<br/><b>YosysHQ</b> solution for formal verification."));
 }
