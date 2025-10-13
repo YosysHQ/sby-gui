@@ -228,8 +228,8 @@ void SBYFile::update()
         }
     } else // have tasks
     {
-        int counter = 0;
-        int valid = 0;
+        size_t counter = 0;
+        size_t valid = 0;
         for (auto &task : tasks) {
             task->updateTask();
             if (task->getStatusColor() != 0)
