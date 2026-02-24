@@ -1,5 +1,5 @@
 /*
- *  sby-gui -- SymbiYosys GUI
+ *  sby-gui -- SBY GUI
  *
  *  Copyright (C) 2019  Miodrag Milanovic <miodrag@symbioticeda.com>
  *
