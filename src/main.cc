@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     }
     if (positionalArguments.size() == 1) {
         QFileInfo location(positionalArguments[0]);
-        if(location.exists()) {
+        if (location.exists()) {
             if (!location.isDir()) {
                 printf("File location is not directory.\n");
                 return -1;

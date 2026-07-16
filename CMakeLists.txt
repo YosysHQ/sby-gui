@@ -1,5 +1,5 @@
 # TODO: sensible minimum CMake version
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.13)
 project(sby-gui)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -17,10 +17,25 @@ if(NOT DEFINED CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
      set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
 endif()
 
-# Find the Qt5 libraries
-find_package(Qt5 COMPONENTS Core Widgets Xml REQUIRED)
+# Detect Qt version (try Qt6 first)
+find_package(Qt6 COMPONENTS Core Widgets Xml QUIET)
+if (Qt6_FOUND)
+    message(STATUS "Using Qt6")
+    set(QT_VERSION_MAJOR 6)
+    set(QT_LIBRARIES Qt6::Core Qt6::Widgets Qt6::Xml)
+else()
+    message(STATUS "Using Qt5")
+    find_package(Qt5 COMPONENTS Core Widgets Xml REQUIRED)
+    set(QT_VERSION_MAJOR 5)
+    set(QT_LIBRARIES Qt5::Core Qt5::Widgets Qt5::Xml)
+    if(APPLE)
+        find_package(Qt5 COMPONENTS MacExtras REQUIRED)
+        list(APPEND QT_LIBRARIES Qt5::MacExtras)
+    endif()
+endif()
 
-add_subdirectory(3rdparty/scintilla ${CMAKE_CURRENT_BINARY_DIR}/generated/3rdparty/ScintillaEdit)
+
+add_subdirectory(3rdparty/QScintilla ${CMAKE_CURRENT_BINARY_DIR}/generated/3rdparty/QScintilla)
 add_subdirectory(src ${CMAKE_CURRENT_BINARY_DIR}/generated/src)
 
 set(EXECUTABLE_OUTPUT_PATH .)

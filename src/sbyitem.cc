@@ -1,16 +1,14 @@
 #include "sbyitem.h"
+#include <QDir>
 #include <QDomDocument>
 #include <QFile>
 #include <QProcess>
-#include <QDir>
+#include <QRegularExpression>
 
-SBYItem::SBYItem(QFileInfo path, QString name) : path(path), name(name), timeSpent(-1), previousLog()
-{
-
-}
+SBYItem::SBYItem(QFileInfo path, QString name) : name(name), path(path), timeSpent(-1), previousLog() {}
 
 void SBYItem::updateFromXML(QFileInfo inputFile)
-{    
+{
     QFileInfo xmlFile(inputFile.path() + "/" + inputFile.completeBaseName() + ".xml");
     timeSpent = -1;
     previousLog = "";
@@ -27,30 +25,21 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
         if (!testsuiteList.isEmpty()) {
             QDomElement testsuite = testsuiteList.at(0).toElement();
             if (testsuite.hasAttribute("errors"))
-            {
                 errors = testsuite.attribute("errors").toInt();
-            }
             if (testsuite.hasAttribute("failures"))
-            {
                 failures = testsuite.attribute("failures").toInt();
-            }
-        }
-        QDomNodeList testcaseList = xml.elementsByTagName("testcase");
-        if (!testcaseList.isEmpty()) {
-            QDomElement testcase = testcaseList.at(0).toElement();
-            if (testcase.hasAttribute("time"))
-            {
-                timeSpent = testcase.attribute("time").toInt();
-            }
-            if (testcase.hasAttribute("status"))
-            {
-                percentage = 100;                
-                status = testcase.attribute("status");
-                if (errors==0 && failures==0) {
-                    statusColor = 1;                     
-                }
-                else {
-                    statusColor = 2; 
+            if (testsuite.hasAttribute("time"))
+                timeSpent = testsuite.attribute("time").toInt();
+            QDomNodeList propsList = testsuite.elementsByTagName("property");
+            for (int i = 0; i < propsList.count(); ++i) {
+                QDomElement prop = propsList.at(i).toElement();
+                if (prop.attribute("name") == "status") {
+                    status = prop.attribute("value");
+                    percentage = 100;
+                    if (errors == 0 && failures == 0)
+                        statusColor = 1;
+                    else
+                        statusColor = 2;
                 }
             }
         }
@@ -59,43 +48,40 @@ void SBYItem::updateFromXML(QFileInfo inputFile)
             QDomElement systemOut = systemOutList.at(0).toElement();
             previousLog = systemOut.text();
         }
-    } 
+    }
 }
 
-SBYTask::SBYTask(QFileInfo path, QString name, QString content, QStringList files, SBYFile* parent) : SBYItem(path, name), content(content), parent(parent), files(files)
+SBYTask::SBYTask(QFileInfo path, QString name, QString content, QStringList files, SBYFile *parent)
+        : SBYItem(path, name), content(content), parent(parent), files(files)
 {
 }
 
 void SBYTask::updateTask()
-{    
+{
     statusColor = 0;
     percentage = 0;
     vcdFiles.clear();
     QFileInfo dir(path.path() + "/" + path.completeBaseName() + "_" + name);
     if (dir.exists() && dir.isDir()) {
-        QFileInfo indir(path.path() + "/" + path.completeBaseName() + "_" + name  + "/" + path.completeBaseName() + "_" + name);
+        QFileInfo indir(path.path() + "/" + path.completeBaseName() + "_" + name + "/" + path.completeBaseName() + "_" +
+                        name);
         updateFromXML(indir);
-        QFileInfo engine_0 = QFileInfo(indir.path() + "/" +  "engine_0");
+        QFileInfo engine_0 = QFileInfo(indir.path() + "/" + "engine_0");
         if (engine_0.exists() && engine_0.isDir()) {
             QDir vcdDir = QDir(engine_0.absoluteFilePath());
-            vcdDir.setNameFilters(QStringList()<<"*.vcd");            
+            vcdDir.setNameFilters(QStringList() << "*.vcd");
             vcdFiles = vcdDir.entryInfoList();
         }
     }
 }
 
-void SBYTask::update()
-{
-    parent->update();    
-}
+void SBYTask::update() { parent->update(); }
 
-SBYFile::SBYFile(QFileInfo path) : SBYItem(path, path.fileName())
-{
-}
+SBYFile::SBYFile(QFileInfo path) : SBYItem(path, path.fileName()) {}
 
 QString SBYFile::dumpcfg(QFileInfo &path, QString task)
 {
-    QProcess process;        
+    QProcess process;
     QStringList args;
     args << "--dumpcfg";
     args << path.fileName();
@@ -103,11 +89,11 @@ QString SBYFile::dumpcfg(QFileInfo &path, QString task)
     process.setProgram("sby");
     process.setArguments(args);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("PYTHONUNBUFFERED","1");
-    process.setProcessEnvironment(env);    
+    env.insert("PYTHONUNBUFFERED", "1");
+    process.setProcessEnvironment(env);
     process.setWorkingDirectory(path.dir().canonicalPath());
-    process.setProcessChannelMode(QProcess::MergedChannels);       
-    process.start();   
+    process.setProcessChannelMode(QProcess::MergedChannels);
+    process.start();
     process.waitForFinished();
     return process.readAllStandardOutput();
 }
@@ -118,28 +104,27 @@ bool SBYFile::parse(QFileInfo &path)
         taskList.clear();
         configs.clear();
 
-        QProcess process;        
+        QProcess process;
         QStringList args;
         args << "--dumptasks";
         args << path.fileName();
         process.setProgram("sby");
         process.setArguments(args);
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        env.insert("PYTHONUNBUFFERED","1");
+        env.insert("PYTHONUNBUFFERED", "1");
         process.setProcessEnvironment(env);
         process.setWorkingDirectory(path.dir().canonicalPath());
-        process.setProcessChannelMode(QProcess::MergedChannels);       
-        process.start();   
+        process.setProcessChannelMode(QProcess::MergedChannels);
+        process.start();
         process.waitForFinished();
         QString output(process.readAllStandardOutput());
-        QStringList tasks = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
+        QStringList tasks = output.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
 
         for (auto task : tasks) {
-            configs.insert(task, dumpcfg(path, task)); 
-            taskList << task;   
+            configs.insert(task, dumpcfg(path, task));
+            taskList << task;
         }
-        if (tasks.isEmpty())
-        {
+        if (tasks.isEmpty()) {
             configs.insert("", dumpcfg(path, ""));
         }
         return true;
@@ -151,18 +136,24 @@ bool SBYFile::parse(QFileInfo &path)
 QStringList SBYFile::get_config_files(QString task)
 {
     QStringList files;
+#if QT_VERSION_MAJOR >= 6
+    QStringList lines = configs[task].split(QRegularExpression("\r?\n"));
+#else
     QStringList lines = configs[task].split(QRegExp("\n|\r\n|\r"));
+#endif
     bool filesSection = false;
-    for(auto line : lines)
-    {
+    for (auto line : lines) {
         line = line.trimmed();
 
-        if (line == "--") filesSection = false;
-        if (line.startsWith("[")) filesSection = false;
+        if (line == "--")
+            filesSection = false;
+        if (line.startsWith("["))
+            filesSection = false;
         if (filesSection && !line.isEmpty()) {
             files << line;
         }
-        if (line == "[files]") filesSection = true;        
+        if (line == "[files]")
+            filesSection = true;
     }
     return files;
 }
@@ -170,9 +161,8 @@ QStringList SBYFile::get_config_files(QString task)
 void SBYFile::parse()
 {
     parse(path);
-    for (auto task : taskList)
-    {
-        tasks.push_back(std::make_unique<SBYTask>(path,task, configs[task], get_config_files(task), this));
+    for (auto task : taskList) {
+        tasks.push_back(std::make_unique<SBYTask>(path, task, configs[task], get_config_files(task), this));
         tasksSet.insert(task);
     }
     if (!haveTasks()) {
@@ -186,8 +176,8 @@ void SBYFile::refresh()
     f->parse();
     f->update();
 
-    QSet<QString> newTaskSet = f->getTasksSet(); 
-    QSet<QString> currTaskSet = getTasksSet(); 
+    QSet<QString> newTaskSet = f->getTasksSet();
+    QSet<QString> currTaskSet = getTasksSet();
     QSet<QString> newTasks = newTaskSet - currTaskSet;
     QSet<QString> deletedTasks = currTaskSet - newTaskSet;
 
@@ -196,33 +186,28 @@ void SBYFile::refresh()
         files = get_config_files("");
     }
 
-    if(!newTasks.isEmpty())
-    {
-        for(auto name : newTasks) {
-            tasks.push_back(std::make_unique<SBYTask>(path,name, configs[name], get_config_files(name), this));
+    if (!newTasks.isEmpty()) {
+        for (auto name : newTasks) {
+            tasks.push_back(std::make_unique<SBYTask>(path, name, configs[name], get_config_files(name), this));
             tasksSet.insert(name);
         }
     }
-    if(!deletedTasks.isEmpty())
-    {
-        for(auto name : deletedTasks) {
+    if (!deletedTasks.isEmpty()) {
+        for (auto name : deletedTasks) {
             auto it = tasks.begin();
-            while(it != tasks.end()) {
+            while (it != tasks.end()) {
                 if (it->get()->getTaskName() == name) {
                     tasks.erase(it);
-                }
-                else ++it;
-            }            
+                } else
+                    ++it;
+            }
             tasksSet.remove(name);
         }
     }
     update();
 }
 
-bool SBYFile::haveTasks()
-{
-    return taskList.size() != 0;
-}
+bool SBYFile::haveTasks() { return taskList.size() != 0; }
 
 void SBYFile::update()
 {
@@ -234,27 +219,27 @@ void SBYFile::update()
         if (dir.exists() && dir.isDir()) {
             QFileInfo indir(path.path() + "/" + path.completeBaseName() + "/" + path.completeBaseName());
             updateFromXML(indir);
-            QFileInfo engine_0 = QFileInfo(indir.path() + "/" +  "engine_0");
+            QFileInfo engine_0 = QFileInfo(indir.path() + "/" + "engine_0");
             if (engine_0.exists() && engine_0.isDir()) {
                 QDir vcdDir = QDir(engine_0.absoluteFilePath());
-                vcdDir.setNameFilters(QStringList()<<"*.vcd");            
+                vcdDir.setNameFilters(QStringList() << "*.vcd");
                 vcdFiles = vcdDir.entryInfoList();
-            }            
-        }        
-    }
-    else // have tasks
+            }
+        }
+    } else // have tasks
     {
-        int counter = 0;
-        int valid = 0;
-        for (auto& task : tasks)
-        {
+        size_t counter = 0;
+        size_t valid = 0;
+        for (auto &task : tasks) {
             task->updateTask();
-            if (task->getStatusColor()!=0) counter++;
-            if (task->getStatusColor()==1) valid++;
+            if (task->getStatusColor() != 0)
+                counter++;
+            if (task->getStatusColor() == 1)
+                valid++;
         }
         percentage = counter * 100 / tasks.size();
-        if (tasks.size()==counter) {
-            if (valid==counter) 
+        if (tasks.size() == counter) {
+            if (valid == counter)
                 statusColor = 1;
             else if (valid == 0)
                 statusColor = 2;
@@ -268,8 +253,8 @@ void SBYFile::update()
 
 SBYTask *SBYFile::getTask(QString name)
 {
-    for(auto& task : tasks) {
-        if (task->getTaskName() == name) 
+    for (auto &task : tasks) {
+        if (task->getTaskName() == name)
             return task.get();
     }
     return nullptr;

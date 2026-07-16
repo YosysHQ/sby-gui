@@ -1,21 +1,22 @@
 #ifndef SBYITEM_H
 #define SBYITEM_H
 
+#include <QDir>
+#include <QFileInfo>
+#include <QMap>
 #include <QSet>
 #include <QString>
-#include <QFileInfo>
-#include <QDir>
-#include <QMap>
 #include <memory>
 
-class SBYItem {
-public:
+class SBYItem
+{
+  public:
     SBYItem(QFileInfo path, QString name);
-    virtual ~SBYItem() { }
+    virtual ~SBYItem() {}
     QString getName() { return name; }
     QString getFileName() { return path.fileName(); }
     QString getFullPath() { return path.absoluteFilePath(); }
-    QString getWorkFolder() { return path.dir().absolutePath(); }    
+    QString getWorkFolder() { return path.dir().absolutePath(); }
     int getStatusColor() { return statusColor; }
     QString getStatus() { return status; }
     int getPercentage() { return percentage; }
@@ -29,7 +30,8 @@ public:
     virtual QString getContents() = 0;
     virtual QStringList &getFiles() = 0;
     virtual QFileInfoList &getVCDFiles() = 0;
-protected:
+
+  protected:
     QString name;
     QFileInfo path;
     int statusColor;
@@ -41,9 +43,10 @@ protected:
 
 class SBYFile;
 
-class SBYTask : public SBYItem {
-public:
-    SBYTask(QFileInfo path, QString name, QString content, QStringList files, SBYFile* parent);
+class SBYTask : public SBYItem
+{
+  public:
+    SBYTask(QFileInfo path, QString name, QString content, QStringList files, SBYFile *parent);
     void update() override;
     void updateTask();
     bool isTop() override { return false; }
@@ -51,15 +54,17 @@ public:
     QString getContents() override { return content; };
     QStringList &getFiles() override { return files; }
     QFileInfoList &getVCDFiles() override { return vcdFiles; }
-private:
-    QString content;    
+
+  private:
+    QString content;
     SBYFile *parent;
     QStringList files;
     QFileInfoList vcdFiles;
 };
 
-class SBYFile : public SBYItem  {
-public:
+class SBYFile : public SBYItem
+{
+  public:
     SBYFile(QFileInfo path);
     void parse();
     bool haveTasks();
@@ -73,7 +78,8 @@ public:
     std::vector<std::unique_ptr<SBYTask>> &getTasks() { return tasks; }
     SBYTask *getTask(QString name);
     QSet<QString> &getTasksSet() { return tasksSet; }
-private:
+
+  private:
     bool parse(QFileInfo &path);
     QStringList get_config_files(QString task);
     QString dumpcfg(QFileInfo &path, QString task);
