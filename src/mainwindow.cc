@@ -1,7 +1,7 @@
 /*
- *  sby-gui -- SymbiYosys GUI
+ *  sby-gui -- SBY GUI
  *
- *  Copyright (C) 2019  Miodrag Milanovic <miodrag@symbioticeda.com>
+ *  Copyright (C) 2019  Miodrag Milanovic <micko@yosyshq.com>
  *
  *  Permission to use, copy, modify, and/or distribute this software for any
  *  purpose with or without fee is hereby granted, provided that the above
@@ -882,6 +882,6 @@ void MainWindow::refreshView()
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("SBY Gui"),
-                       tr("The <b>SymbiYosys GUI</b> is part of "
+                       tr("The <b>SBY GUI</b> is part of "
                           "<br/><b>YosysHQ</b> solution for formal verification."));
 }
